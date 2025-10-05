@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Image from "next/image";
@@ -21,13 +21,19 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="he" dir="rtl">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased relative overflow-x-hidden noise-layer`}
       >
@@ -36,11 +42,11 @@ export default function RootLayout({
           aria-hidden="true"
         />
         {/* Top-left logo (not fixed) */}
-        <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
           <Image
             src="/לוגו-אגודה.png"
             alt="לוגו אגודת הסטודנטים"
-            className="h-30 w-auto select-none"
+            className="h-12 sm:h-16 md:h-20 w-auto select-none"
             decoding="async"
             loading="eager"
             width={120}
