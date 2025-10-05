@@ -1,0 +1,334 @@
+@import "tailwindcss";
+
+/* Root Theme Tokens (Light, Blue/White) */
+:root {
+  /* Brand */
+  --primary: #3b7fc4; /* requested blue */
+  --primary-600: #2e6aaa;
+  --primary-700: #255b90;
+
+  /* Base */
+  --background: #ffffff; /* requested white */
+  --foreground: #0f172a; /* slate-900 */
+
+  /* Layout + accents */
+  --radius-sm: 6px;
+  --radius: 14px;
+  --radius-lg: 28px;
+  --surface: 0 0 0 / 0.04; /* subtle borders on white */
+  --grid-color: 0 0 0 / 0.06; /* very light grid */
+  --noise-opacity: 0.025;
+}
+
+/* Theme tokens consumed directly via CSS variables */
+
+/* Base */
+html,
+body {
+  scroll-behavior: smooth;
+}
+
+body {
+  /* clean light background with a very subtle vignette */
+  background: radial-gradient(
+      1200px 600px at 80% 10%,
+      rgba(59, 127, 196, 0.06),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 420px at 10% 90%,
+      rgba(59, 127, 196, 0.04),
+      transparent 65%
+    ),
+    #ffffff;
+  min-height: 100vh;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, Arial, Helvetica, sans-serif;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Light UI Utility Classes */
+.glass {
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  background: linear-gradient(
+    145deg,
+    rgba(255 255 255 / 0.9),
+    rgba(255 255 255 / 0.7)
+  );
+  border: 1px solid rgba(0 0 0 / 0.06);
+  box-shadow: 0 2px 6px -2px rgba(15 23 42 / 0.08),
+    0 12px 28px -8px rgba(15 23 42 / 0.08);
+  border-radius: var(--radius);
+}
+
+.glass-border {
+  position: relative;
+}
+
+.glass-border:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--primary), white 25%),
+    var(--primary)
+  );
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(59, 127, 196, 0.25));
+}
+
+.neon-text {
+  background: linear-gradient(
+    100deg,
+    var(--primary),
+    color-mix(in oklab, var(--primary), black 10%)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+}
+
+.btn-futuristic {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--primary), white 6%),
+    color-mix(in oklab, var(--primary), black 6%)
+  );
+  border: 1px solid color-mix(in oklab, var(--primary), black 12%);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border-radius: 14px;
+  padding: 0.9rem 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  font-size: 0.95rem;
+  color: #fff;
+  isolation: isolate;
+  transition: background 200ms ease, transform 160ms ease, box-shadow 220ms ease,
+    filter 200ms ease;
+  box-shadow: 0 6px 18px -6px rgba(59, 127, 196, 0.35);
+}
+
+.btn-futuristic:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--primary), white 20%),
+    color-mix(in oklab, var(--primary), black 10%)
+  );
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.btn-futuristic:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+  box-shadow: 0 10px 22px -8px rgba(59, 127, 196, 0.45);
+}
+
+.btn-futuristic:active {
+  transform: translateY(0);
+}
+
+.btn-futuristic:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+}
+
+/* Animated Grid Background (optional overlay) */
+.bg-grid:before,
+.bg-grid:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-size: 140px 140px;
+  background-image: linear-gradient(
+      to right,
+      rgba(var(--grid-color)),
+      rgba(var(--grid-color)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(var(--grid-color)),
+      rgba(var(--grid-color)) 1px,
+      transparent 1px
+    );
+  mask: radial-gradient(circle at 50% 50%, #000 0%, #000 55%, transparent 75%);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.bg-grid:after {
+  animation: grid-move 38s linear infinite;
+  background-size: 160px 160px;
+  mix-blend-mode: multiply;
+  opacity: 0.12;
+}
+
+@keyframes grid-move {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(160px);
+  }
+}
+
+/* Soft Noise Layer */
+.noise-layer:before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/feDisplacementMap%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+  opacity: var(--noise-opacity);
+  z-index: 1;
+}
+
+/* Fancy heading underline accent */
+.fancy-underline {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 0.3rem;
+}
+.fancy-underline:after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 64%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  filter: drop-shadow(0 0 4px rgba(59, 127, 196, 0.45));
+  border-radius: 999px;
+}
+
+/* Alert styles modernized */
+.alert {
+  position: relative;
+  padding: 1rem 1.25rem;
+  border-radius: 0.55rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  text-align: left;
+  line-height: 1.5;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(0 0 0 / 0.08);
+  background: linear-gradient(
+    120deg,
+    rgba(59 127 196 / 0.08),
+    rgba(255 255 255 / 0.8)
+  );
+  box-shadow: 0 2px 4px -2px rgba(15 23 42 / 0.08),
+    inset 0 0 0 1px rgba(255 255 255 / 0.6);
+}
+.alert-success {
+  border-color: color-mix(in oklab, var(--primary), #22c55e 35%);
+  box-shadow: 0 0 0 1px rgba(34 197 94 / 0.28),
+    0 0 24px -6px rgba(34 197 94 / 0.28);
+}
+.alert-error {
+  border-color: rgba(255 46 120 / 0.55);
+  box-shadow: 0 0 0 1px rgba(255 46 120 / 0.3),
+    0 0 26px -4px rgba(255 46 140 / 0.45);
+}
+
+/* Spinner */
+.spinner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 70% 30%, #fff 6%, transparent 0),
+    conic-gradient(
+      from 0deg,
+      color-mix(in oklab, var(--primary), white 20%),
+      var(--primary),
+      color-mix(in oklab, var(--primary), black 10%),
+      color-mix(in oklab, var(--primary), white 20%)
+    );
+  -webkit-mask: radial-gradient(circle at center, transparent 60%, #000 61%);
+  mask: radial-gradient(circle at center, transparent 60%, #000 61%);
+  animation: spin 1.25s linear infinite, pulse 2.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(59, 127, 196, 0.5));
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Card grid placeholder (if added later) */
+.gift-card {
+  position: relative;
+  padding: 1rem;
+  border-radius: 0.95rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 300ms;
+}
+.gift-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 28px -6px rgba(15 23 42 / 0.2),
+    0 0 8px -2px rgba(59, 127, 196, 0.35);
+}
+.gift-card:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    160deg,
+    rgba(59 127 196 / 0.06),
+    rgba(255 255 255 / 0)
+  );
+  pointer-events: none;
+}
+
+/* Reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: spin 1.4s linear infinite;
+  }
+  .bg-grid:after {
+    animation: none;
+  }
+  .btn-futuristic:hover {
+    transform: none;
+  }
+}
