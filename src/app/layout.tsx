@@ -41,10 +41,9 @@ export default function RootLayout({
           className="absolute inset-0 bg-grid pointer-events-none"
           aria-hidden="true"
         />
-        {/* Top-left logo (not fixed) */}
         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
           <Image
-            src="/לוגו-אגודה.png"
+            src="/לוגו.png"
             alt="לוגו אגודת הסטודנטים"
             className="h-12 sm:h-16 md:h-20 w-auto select-none"
             decoding="async"
