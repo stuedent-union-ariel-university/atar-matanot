@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { gifts } from "@/lib/gifts";
+import { getGiftsWithRemaining } from "@/lib/monday";
 
 export async function GET() {
-  // In future we could filter by availability or user eligibility.
-  return NextResponse.json({ gifts });
+  try {
+    const gifts = await getGiftsWithRemaining();
+    return NextResponse.json({ gifts });
+  } catch (e) {
+    // Fallback to empty list if Monday is misconfigured, avoiding server error.
+    return NextResponse.json({ gifts: [] }, { status: 200 });
+  }
 }

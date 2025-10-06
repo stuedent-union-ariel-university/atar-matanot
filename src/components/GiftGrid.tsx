@@ -142,22 +142,33 @@ export default function GiftGrid() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {gifts.map((gift) => {
               const selected = gift.id === selectedGiftId;
+              const remaining = gift.remaining ?? gift.stock ?? 0;
+              const isOut = remaining <= 0;
+              const isLow = !isOut && remaining <= 50;
               return (
                 <button
                   key={gift.id}
                   type="button"
-                  onClick={() => setSelectedGiftId(gift.id)}
+                  onClick={() => !isOut && setSelectedGiftId(gift.id)}
                   aria-pressed={selected}
+                  aria-disabled={isOut}
                   className={`relative group rounded-2xl border p-4 text-right transition shadow-sm hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3B7FC4]/40 ${
-                    selected
+                    isOut
+                      ? "border-rose-300 bg-rose-50/70 cursor-not-allowed opacity-70"
+                      : selected
                       ? "border-[#3B7FC4]/50 bg-[#3B7FC4]/10"
                       : "border-black/10 bg-white/60"
                   }`}
                   dir="rtl"
                 >
-                  {selected && (
+                  {selected && !isOut && (
                     <span className="absolute -top-2 -left-2 bg-[#3B7FC4] text-white text-xs font-bold px-2 py-1 rounded-full shadow">
                       נבחר
+                    </span>
+                  )}
+                  {isOut && (
+                    <span className="absolute -top-2 -left-2 bg-rose-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
+                      נגמר המלאי
                     </span>
                   )}
                   {gift.image && (
@@ -167,7 +178,9 @@ export default function GiftGrid() {
                         alt={gift.title}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover opacity-95 group-hover:opacity-100 transition-transform duration-300 group-hover:scale-[1.02]"
+                        className={`object-cover opacity-95 group-hover:opacity-100 transition-transform duration-300 group-hover:scale-[1.02] ${
+                          isOut ? "grayscale" : ""
+                        }`}
                         priority={false}
                       />
                     </div>
@@ -180,6 +193,22 @@ export default function GiftGrid() {
                       {gift.description}
                     </p>
                   )}
+                  {/* stock indicators */}
+                  <div className="mt-2 text-sm">
+                    {isOut ? (
+                      <span className="inline-flex items-center gap-1 text-rose-700 font-medium">
+                        ❌ אזל מהמלאי
+                      </span>
+                    ) : isLow ? (
+                      <span className="inline-flex items-center gap-1 text-amber-700 font-medium">
+                        ⚠️ אחרונים: נשארו {remaining}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-slate-500">
+                        במלאי: {remaining}
+                      </span>
+                    )}
+                  </div>
                   {/* subtle primary glow on hover */}
                   <span
                     className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"

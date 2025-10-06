@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { config } from "@/lib/config";
 import { NextResponse } from "next/server";
-import { mondayQueryRaw, createClaimItem } from "@/lib/monday";
+import {
+  mondayQueryRaw,
+  createClaimItem,
+  countClaimsByGiftTitle,
+} from "@/lib/monday";
 import { gifts } from "@/lib/gifts";
 
 export async function POST(request: Request) {
@@ -69,6 +73,15 @@ export async function POST(request: Request) {
         { error: "כבר בחרת מתנה בעבר" },
         { status: 400 }
       );
+    }
+
+    // Concurrency guard: ensure stock remains before creating claim
+    const counts = await countClaimsByGiftTitle();
+    const stock = gift.stock ?? 0;
+    const claimed = counts[gift.title] || 0;
+    const remaining = stock - claimed;
+    if (remaining <= 0) {
+      return NextResponse.json({ error: "המתנה אזלה מהמלאי" }, { status: 409 });
     }
 
     // Create new item in claims board

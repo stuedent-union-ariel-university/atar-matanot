@@ -6,6 +6,7 @@ import type {
   ItemsPageQueryData,
   CreateItemResponse,
 } from "@/types/monday";
+import { gifts as baseGifts, type Gift } from "@/lib/gifts";
 
 // Generic GraphQL request helper with typed response & variables
 export async function mondayRequest<
@@ -122,5 +123,52 @@ export async function createClaimItem(
     boardId,
     itemName: `${giftTitle}`,
     columnValues,
+  });
+}
+
+// Count number of claimed items per gift title in the claims board.
+export async function countClaimsByGiftTitle(): Promise<
+  Record<string, number>
+> {
+  const claimsBoardId = config.CLAIMS_BOARD_ID;
+  if (!claimsBoardId) return {};
+
+  // We only need the gift title column to aggregate counts. Default to "text1".
+  const giftTitleColumnId = config.CLAIMS_BOARD_GIFT_TITLE_COLUMN_ID || "text1";
+
+  let cursor: string | null = null;
+  const limit = 500;
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < 50; i++) {
+    const data: ItemsPageQueryData = await mondayRequest<ItemsPageQueryData>(
+      ITEMS_PAGE_QUERY,
+      {
+        boardId: claimsBoardId,
+        cursor,
+        limit,
+        columnId: [giftTitleColumnId],
+      }
+    );
+    const items = data?.boards?.[0]?.items_page?.items ?? [];
+    for (const item of items) {
+      const title =
+        item.column_values?.find((c) => c.id === giftTitleColumnId)?.text || "";
+      if (!title) continue;
+      counts[title] = (counts[title] || 0) + 1;
+    }
+    cursor = data?.boards?.[0]?.items_page?.cursor || null;
+    if (!cursor) break;
+  }
+  return counts;
+}
+
+// Compute remaining quantities for each configured gift by subtracting claims.
+export async function getGiftsWithRemaining(): Promise<Gift[]> {
+  const counts = await countClaimsByGiftTitle();
+  return baseGifts.map((g) => {
+    const stock = g.stock ?? 0;
+    const claimed = counts[g.title] || 0;
+    const remaining = Math.max(0, stock - claimed);
+    return { ...g, remaining };
   });
 }
