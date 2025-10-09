@@ -11,4 +11,8 @@ export const config = {
     process.env.MONDAY_CLAIMS_BOARD_USER_ID_COLUMN_ID,
   CLAIMS_BOARD_GIFT_TITLE_COLUMN_ID:
     process.env.MONDAY_CLAIMS_BOARD_GIFT_TITLE_COLUMN_ID,
+  // Inventory board config: a board where each item represents a gift, with columns for gift id and stock
+  INVENTORY_BOARD_ID: process.env.MONDAY_INVENTORY_BOARD_ID,
+  INVENTORY_GIFT_ID_COLUMN_ID: process.env.MONDAY_INVENTORY_GIFT_ID_COLUMN_ID, // typically a Text column
+  INVENTORY_STOCK_COLUMN_ID: process.env.MONDAY_INVENTORY_STOCK_COLUMN_ID, // typically a Numbers column
 };

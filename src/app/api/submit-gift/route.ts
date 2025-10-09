@@ -5,6 +5,9 @@ import {
   mondayQueryRaw,
   createClaimItem,
   countClaimsByGiftTitle,
+  decrementInventoryForGiftId,
+  getCurrentStockForGiftId,
+  incrementInventoryForGiftId,
 } from "@/lib/monday";
 import { gifts } from "@/lib/gifts";
 
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
       limit: 500,
     });
 
-    const items = checkResult?.data?.boards?.[0]?.items_page?.items || [];
+    const items = checkResult?.boards?.[0]?.items_page?.items || [];
     const existingClaim = items.find((item: any) =>
       item.column_values?.some(
         (col: any) => col.id === userColumnId && col.text === userId
@@ -75,17 +78,66 @@ export async function POST(request: Request) {
       );
     }
 
-    // Concurrency guard: ensure stock remains before creating claim
-    const counts = await countClaimsByGiftTitle();
-    const stock = gift.stock ?? 0;
-    const claimed = counts[gift.title] || 0;
-    const remaining = stock - claimed;
-    if (remaining <= 0) {
-      return NextResponse.json({ error: "המתנה אזלה מהמלאי" }, { status: 409 });
+    // Stock guard: prefer live inventory board if configured; fallback to derived remaining
+    let canProceed = true;
+    if (
+      config.INVENTORY_BOARD_ID &&
+      config.INVENTORY_GIFT_ID_COLUMN_ID &&
+      config.INVENTORY_STOCK_COLUMN_ID
+    ) {
+      const current = await getCurrentStockForGiftId(gift.id);
+      if (current == null || current <= 0) {
+        return NextResponse.json(
+          { error: "המתנה אזלה מהמלאי" },
+          { status: 409 }
+        );
+      }
+    } else {
+      // Fallback to static stock - claims aggregation
+      const counts = await countClaimsByGiftTitle();
+      const stock = gift.stock ?? 0;
+      const claimed = counts[gift.title] || 0;
+      const remaining = stock - claimed;
+      if (remaining <= 0) {
+        return NextResponse.json(
+          { error: "המתנה אזלה מהמלאי" },
+          { status: 409 }
+        );
+      }
     }
 
-    // Create new item in claims board
-    await createClaimItem(config.CLAIMS_BOARD_ID, userId, gift.title);
+    // If inventory board configured, decrement atomically before writing claim
+    if (
+      config.INVENTORY_BOARD_ID &&
+      config.INVENTORY_GIFT_ID_COLUMN_ID &&
+      config.INVENTORY_STOCK_COLUMN_ID
+    ) {
+      try {
+        await decrementInventoryForGiftId(gift.id);
+      } catch (e) {
+        return NextResponse.json(
+          { error: (e as Error).message || "המתנה אזלה מהמלאי" },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Create new item in claims board to log the redemption
+    try {
+      await createClaimItem(config.CLAIMS_BOARD_ID, userId, gift.title);
+    } catch (e) {
+      // Compensation: if inventory was decremented, add it back
+      if (
+        config.INVENTORY_BOARD_ID &&
+        config.INVENTORY_GIFT_ID_COLUMN_ID &&
+        config.INVENTORY_STOCK_COLUMN_ID
+      ) {
+        try {
+          await incrementInventoryForGiftId(gift.id);
+        } catch {}
+      }
+      throw e;
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
