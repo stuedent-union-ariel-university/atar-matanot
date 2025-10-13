@@ -9,7 +9,7 @@ export async function GET() {
       stock,
     }));
     return NextResponse.json({ inventory: list });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
       { error: "Inventory not configured" },
       { status: 500 }

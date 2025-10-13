@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const gifts = await getGiftsWithRemaining();
     return NextResponse.json({ gifts });
-  } catch (e) {
+  } catch {
     // Fallback to empty list if Monday is misconfigured, avoiding server error.
     return NextResponse.json({ gifts: [] }, { status: 200 });
   }

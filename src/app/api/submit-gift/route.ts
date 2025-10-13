@@ -78,8 +78,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Stock guard: prefer live inventory board if configured; fallback to derived remaining
-    let canProceed = true;
     if (
       config.INVENTORY_BOARD_ID &&
       config.INVENTORY_GIFT_ID_COLUMN_ID &&

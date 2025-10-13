@@ -191,12 +191,6 @@ export async function getGiftsWithRemaining(): Promise<Gift[]> {
 
 // ---------- Inventory board helpers ----------
 
-type InventoryItem = {
-  id: string;
-  giftId: string;
-  stockText: string;
-};
-
 // Fetch the full inventory board into a Map<giftId, stockText>
 export async function getInventoryMap(): Promise<Map<string, string>> {
   const res = new Map<string, string>();
@@ -262,7 +256,6 @@ export async function getCurrentStockForGiftId(
     return null;
   const itemId = await findInventoryItemIdByGiftId(giftId);
   if (!itemId) return null;
-  const boardId = config.INVENTORY_BOARD_ID!;
   const stockCol = config.INVENTORY_STOCK_COLUMN_ID!;
   // Fetch just the stock column value for this item
   const query = `
@@ -274,7 +267,7 @@ export async function getCurrentStockForGiftId(
     ids: [itemId],
     columnId: [stockCol],
   });
-  const items: any = (data as any)?.items ?? [];
+  const items: MondayItem[] = data?.items ?? [];
   const stockText: string | undefined = items?.[0]?.column_values?.[0]?.text;
   const n = Number(stockText);
   return Number.isFinite(n) ? n : 0;
