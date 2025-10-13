@@ -90,12 +90,16 @@ async function updateInventoryItemStock(itemId: string, nextStock: number) {
   const boardId = requireEnv("INVENTORY_BOARD_ID");
   const stockCol = requireEnv("INVENTORY_STOCK_COLUMN_ID");
   const mutation = `
-    mutation($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
-      change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) { id }
+    mutation($boardId: ID!, $itemId: ID!, $columnId: String!, $value: String!) {
+      change_simple_column_value(board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) { id }
     }
   `;
-  const columnValues = JSON.stringify({ [stockCol]: String(nextStock) });
-  return mondayRequest(mutation, { boardId, itemId, columnValues });
+  return mondayRequest(mutation, {
+    boardId,
+    itemId,
+    columnId: stockCol,
+    value: String(nextStock),
+  });
 }
 
 async function main() {

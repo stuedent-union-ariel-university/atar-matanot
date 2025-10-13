@@ -173,7 +173,10 @@ export async function getGiftsWithRemaining(): Promise<Gift[]> {
     const inventory = await getInventoryMap();
     return baseGifts.map((g) => {
       const stockStr = inventory.get(g.id);
-      const stock = stockStr != null ? Number(stockStr) : g.stock ?? 0;
+      const stock =
+        stockStr != null
+          ? Number((stockStr ?? "").replace(/[^0-9.-]/g, ""))
+          : g.stock ?? 0;
       const remaining = Math.max(0, Number.isFinite(stock) ? stock : 0);
       return { ...g, remaining };
     });
@@ -269,7 +272,9 @@ export async function getCurrentStockForGiftId(
   });
   const items: MondayItem[] = data?.items ?? [];
   const stockText: string | undefined = items?.[0]?.column_values?.[0]?.text;
-  const n = Number(stockText);
+  // Be robust to thousand separators or other formatting returned by Monday
+  const cleaned = (stockText ?? "").replace(/[^0-9.-]/g, "");
+  const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
 
@@ -297,15 +302,63 @@ export async function decrementInventoryForGiftId(
   }
 
   const next = current - 1;
-  // Update via change_multiple_column_values mutation
-  const mutation = `
-    mutation($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
-      change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) { id }
-    }
-  `;
-  // Numbers column expects a numeric string
-  const columnValues = JSON.stringify({ [stockCol]: String(next) });
-  await mondayRequest(mutation, { boardId, itemId, columnValues });
+
+  // Try 1: change_simple_column_value
+  try {
+    const mutation1 = `
+      mutation($boardId: ID!, $itemId: ID!, $columnId: String!, $value: String!) {
+        change_simple_column_value(board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) { id }
+      }
+    `;
+    await mondayRequest(mutation1, {
+      boardId,
+      itemId,
+      columnId: stockCol,
+      value: String(next),
+    });
+    const after1 = await getCurrentStockForGiftId(giftId);
+    if (after1 === next) return;
+  } catch (e) {
+    // proceed to next attempt
+  }
+
+  // Try 2: change_multiple_column_values with simple numeric string
+  try {
+    const mutation2 = `
+      mutation($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
+        change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) { id }
+      }
+    `;
+    const columnValues = JSON.stringify({ [stockCol]: String(next) });
+    await mondayRequest(mutation2, { boardId, itemId, columnValues });
+    const after2 = await getCurrentStockForGiftId(giftId);
+    if (after2 === next) return;
+  } catch (e) {
+    // proceed to next attempt
+  }
+
+  // Try 3: change_column_value sending a JSON string value
+  try {
+    const mutation3 = `
+      mutation($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
+        change_column_value(board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) { id }
+      }
+    `;
+    // For simple columns like Numbers, pass a JSON string representing the raw value
+    const value = JSON.stringify(String(next));
+    await mondayRequest(mutation3, {
+      boardId,
+      itemId,
+      columnId: stockCol,
+      value,
+    });
+    const after3 = await getCurrentStockForGiftId(giftId);
+    if (after3 === next) return;
+  } catch (e) {
+    // fallthrough
+  }
+
+  throw new Error("עדכון המלאי נכשל");
 }
 
 // Best-effort compensation to add 1 back to stock
@@ -325,10 +378,14 @@ export async function incrementInventoryForGiftId(
   const current = await getCurrentStockForGiftId(giftId);
   const next = (current ?? 0) + 1;
   const mutation = `
-    mutation($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
-      change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) { id }
+    mutation($boardId: ID!, $itemId: ID!, $columnId: String!, $value: String!) {
+      change_simple_column_value(board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) { id }
     }
   `;
-  const columnValues = JSON.stringify({ [stockCol]: String(next) });
-  await mondayRequest(mutation, { boardId, itemId, columnValues });
+  await mondayRequest(mutation, {
+    boardId,
+    itemId,
+    columnId: stockCol,
+    value: String(next),
+  });
 }
