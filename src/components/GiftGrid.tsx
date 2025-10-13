@@ -195,17 +195,9 @@ export default function GiftGrid() {
                   )}
                   {/* stock indicators */}
                   <div className="mt-2 text-sm">
-                    {isOut ? (
+                    {isOut && (
                       <span className="inline-flex items-center gap-1 text-rose-700 font-medium">
                         ❌ אזל מהמלאי
-                      </span>
-                    ) : isLow ? (
-                      <span className="inline-flex items-center gap-1 text-amber-700 font-medium">
-                        ⚠️ אחרונים: נשארו {remaining}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-slate-500">
-                        במלאי: {remaining}
                       </span>
                     )}
                   </div>
