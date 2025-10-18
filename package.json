@@ -7,7 +7,11 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "upload:gifts": "tsx scripts/upload-gifts-to-monday.ts"
+    "upload:gifts": "tsx scripts/upload-gifts-to-monday.ts",
+    "seed:users": "tsx scripts/add-users-to-monday.ts --count 10000",
+    "clean:users": "tsx scripts/remove-users-from-monday.ts --yes",
+    "clean:users:dry": "tsx scripts/remove-users-from-monday.ts",
+    "clean:users:delete": "tsx scripts/remove-users-from-monday.ts --yes --delete"
   },
   "dependencies": {
     "next": "15.5.4",
@@ -24,6 +28,8 @@
     "dotenv": "^17.2.3",
     "eslint": "^9.37.0",
     "eslint-config-next": "15.5.4",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.5",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.19.1",
     "typescript": "^5.9.3"

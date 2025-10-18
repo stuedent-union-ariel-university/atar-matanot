@@ -33,6 +33,111 @@ export async function mondayRequest<
   return json.data;
 }
 
+// A retry-aware variant that handles Monday.com rate limits (HTTP 429 or GraphQL
+// errors indicating complexity/rate limiting) and transient 5xx errors.
+// Uses exponential backoff with jitter and respects Retry-After when present.
+export async function mondayRequestWithRetry<
+  TData,
+  TVars extends Record<string, unknown> = Record<string, unknown>
+>(
+  query: string,
+  variables?: TVars,
+  options?: {
+    retries?: number; // total attempts = retries + 1
+    minDelayMs?: number; // base backoff
+    maxDelayMs?: number; // cap backoff
+    jitterMs?: number; // extra random jitter
+    signal?: AbortSignal;
+  }
+): Promise<TData> {
+  const {
+    retries = 7,
+    minDelayMs = 250,
+    maxDelayMs = 5000,
+    jitterMs = 250,
+    signal,
+  } = options || {};
+
+  const sleep = (ms: number) =>
+    new Promise<void>((res) => setTimeout(res, Math.max(0, ms)));
+
+  const shouldRetryGraphQLErrors = (messages: string[]): boolean => {
+    const msg = messages.join("; ");
+    return /rate.?limit|too\s*many\s*requests|complexity|budget|throttle/i.test(
+      msg
+    );
+  };
+
+  let attempt = 0;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    attempt++;
+    const response = await fetch(config.MONDAY_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.MONDAY_API_KEY || ""}`,
+      },
+      body: JSON.stringify({ query, variables }),
+      cache: "no-store",
+      signal,
+    });
+
+    // Handle HTTP errors
+    if (!response.ok) {
+      // 429 or transient 5xx: retry with backoff
+      if (
+        response.status === 429 ||
+        response.status === 502 ||
+        response.status === 503 ||
+        response.status === 504 ||
+        response.status === 500
+      ) {
+        if (attempt > retries + 1) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        // Try to honor Retry-After header if present (seconds)
+        const retryAfter = response.headers.get("Retry-After");
+        const retryAfterMs = retryAfter ? Number(retryAfter) * 1000 : NaN;
+        const backoff = Math.min(
+          maxDelayMs,
+          Math.max(
+            minDelayMs,
+            Number.isFinite(retryAfterMs)
+              ? retryAfterMs
+              : minDelayMs * Math.pow(2, attempt - 1)
+          )
+        );
+        const jitter = Math.random() * jitterMs;
+        await sleep(backoff + jitter);
+        continue;
+      }
+      // Non-retriable
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const json = (await response.json()) as {
+      data: TData;
+      errors?: { message: string }[];
+    };
+    if (json.errors?.length) {
+      if (shouldRetryGraphQLErrors(json.errors.map((e) => e.message))) {
+        if (attempt <= retries + 1) {
+          const backoff = Math.min(
+            maxDelayMs,
+            minDelayMs * Math.pow(2, attempt - 1)
+          );
+          const jitter = Math.random() * jitterMs;
+          await sleep(backoff + jitter);
+          continue;
+        }
+      }
+      throw new Error(json.errors.map((e) => e.message).join(";"));
+    }
+    return json.data;
+  }
+}
+
 const ITEMS_PAGE_QUERY = `
   query Page($boardId: [ID!], $cursor: String, $limit: Int!, $columnId: [String!]) {
     boards(ids: $boardId) {

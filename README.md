@@ -119,6 +119,48 @@ type Gift = {
    ```
 4. גלישה ל: http://localhost:3000/?userId=123456789 (להחליף במספר תקין שקיים בלוח).
 
+## 🧹 ניקוי לוח ה"זכאים" (הסרת משתמשים סינתטיים)
+
+לצורך בדיקות ניתן להוסיף במהירות המון משתמשים ללוח ה"זכאים" בעזרת `seed:users`. כדי לנקות במהירות:
+
+- תצוגה מקדימה (Dry‑run):
+
+  ```powershell
+  pnpm clean:users:dry
+  ```
+
+  יציג אילו פריטים יתועדפו להסרה לפי ברירת מחדל של קידומת `user-` בעמודת ה‑UserId.
+
+- ארכוב הפריטים (ניתן לשחזור):
+
+  ```powershell
+  pnpm clean:users
+  ```
+
+- מחיקה מוחלטת (בלתי הפיך):
+  ```powershell
+  pnpm clean:users:delete
+  ```
+
+פרמטרים אופציונליים נוספים:
+
+- שינוי קידומת הסינון (למשל אם זרעו משתמשים עם `seed-`):
+  ```powershell
+  pnpm tsx scripts/remove-users-from-monday.ts --prefix seed- --yes
+  ```
+
+הסקריפט קורא את משתני הסביבה הבאים:
+
+- `MONDAY_API_KEY`
+- `MONDAY_USER_BOARD_ID`
+- `MONDAY_USER_BOARD_USER_ID_COLUMN_ID`
+
+כדי להוסיף משתמשים לבדיקה:
+
+```powershell
+pnpm seed:users
+```
+
 ## 🛡️ שיקולי אבטחה והוגנות
 
 - אימות זכאות מתבצע בצד השרת בלבד (לא סומכים על הלקוח).
