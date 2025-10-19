@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
-import { findUserInBoard } from "@/lib/monday";
+import { findUserInBoardByColumnValues } from "@/lib/monday";
 
 // Verify user ID by checking it appears in BOTH the user board and the form board,
 // and has NOT appeared yet in the claims board.
@@ -39,9 +39,21 @@ export async function GET(request: Request) {
 
     // Check the three conditions in parallel for efficiency
     const [inUserBoard, inFormBoard, alreadyClaimed] = await Promise.all([
-      findUserInBoard(USER_BOARD_ID, USER_BOARD_USER_ID_COLUMN_ID, userId),
-      findUserInBoard(FORM_BOARD_ID, FORM_BOARD_USER_ID_COLUMN_ID, userId),
-      findUserInBoard(CLAIMS_BOARD_ID, CLAIMS_BOARD_USER_ID_COLUMN_ID, userId),
+      findUserInBoardByColumnValues(
+        USER_BOARD_ID,
+        USER_BOARD_USER_ID_COLUMN_ID,
+        userId
+      ),
+      findUserInBoardByColumnValues(
+        FORM_BOARD_ID,
+        FORM_BOARD_USER_ID_COLUMN_ID,
+        userId
+      ),
+      findUserInBoardByColumnValues(
+        CLAIMS_BOARD_ID,
+        CLAIMS_BOARD_USER_ID_COLUMN_ID,
+        userId
+      ),
     ]);
 
     if (!inUserBoard) {

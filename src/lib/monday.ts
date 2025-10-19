@@ -185,6 +185,47 @@ export async function findUserInBoard(
   return false;
 }
 
+// Use Monday's items_page_by_column_values for direct server-side filtering by column value.
+// This is more efficient than scanning pages client-side when you know the exact value to match.
+export async function findUserInBoardByColumnValues(
+  boardId: string,
+  columnId: string,
+  userId: string,
+  limit = 50
+): Promise<boolean> {
+  const QUERY = `
+    query ($boardId: ID!, $columns: [ItemsPageByColumnValuesQuery!], $limit: Int) {
+      items_page_by_column_values(board_id: $boardId, columns: $columns, limit: $limit) {
+        items { id }
+        cursor
+      }
+    }
+  `;
+
+  type ItemsPageByColumnValuesData = {
+    items_page_by_column_values?: {
+      items?: Array<{ id: string }>;
+      cursor?: string | null;
+    } | null;
+  };
+
+  const data = await mondayRequest<
+    ItemsPageByColumnValuesData,
+    {
+      boardId: string;
+      columns: Array<{ column_id: string; column_values: string }>;
+      limit?: number;
+    }
+  >(QUERY, {
+    boardId,
+    columns: [{ column_id: columnId, column_values: userId }],
+    limit,
+  });
+
+  const items = data?.items_page_by_column_values?.items ?? [];
+  return items.length > 0;
+}
+
 export async function mondayQueryRaw<
   TData = unknown,
   TVars extends Record<string, unknown> = Record<string, unknown>
