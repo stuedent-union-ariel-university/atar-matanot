@@ -10,6 +10,8 @@ import { findUserInBoard } from "@/lib/monday";
 // and has NOT appeared yet in the claims board.
 export async function GET(request: Request) {
   try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(new Error("timeout")), 6000);
     const reqStart = Date.now();
     const {
       MONDAY_API_KEY,
@@ -47,7 +49,10 @@ export async function GET(request: Request) {
     const alreadyClaimed = await findUserInBoard(
       CLAIMS_BOARD_ID,
       CLAIMS_BOARD_USER_ID_COLUMN_ID,
-      userId
+      userId,
+      undefined,
+      undefined,
+      ac.signal
     );
     const tClaim = Date.now();
     if (alreadyClaimed) {
@@ -65,8 +70,22 @@ export async function GET(request: Request) {
 
     // Check the two eligibility boards in parallel
     const [inUserBoard, inFormBoard] = await Promise.all([
-      findUserInBoard(USER_BOARD_ID, USER_BOARD_USER_ID_COLUMN_ID, userId),
-      findUserInBoard(FORM_BOARD_ID, FORM_BOARD_USER_ID_COLUMN_ID, userId),
+      findUserInBoard(
+        USER_BOARD_ID,
+        USER_BOARD_USER_ID_COLUMN_ID,
+        userId,
+        undefined,
+        undefined,
+        ac.signal
+      ),
+      findUserInBoard(
+        FORM_BOARD_ID,
+        FORM_BOARD_USER_ID_COLUMN_ID,
+        userId,
+        undefined,
+        undefined,
+        ac.signal
+      ),
     ]);
     const tElig = Date.now();
 
@@ -97,11 +116,12 @@ export async function GET(request: Request) {
     const res = NextResponse.json({ success: true });
     res.headers.set("x-timing-verify-elig-ms", String(tElig - tClaim));
     res.headers.set("x-timing-verify-total-ms", String(Date.now() - reqStart));
+    clearTimeout(timer);
     return res;
   } catch (e) {
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: "שירות האימות איטי כרגע, נסה/י שוב בעוד רגע" },
+      { status: 503 }
     );
   }
 }

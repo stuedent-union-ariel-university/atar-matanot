@@ -174,6 +174,10 @@ const ITEMS_PAGE_QUERY = `
 type BoolCacheEntry = { value: boolean; expires: number };
 const existenceCache = new Map<string, BoolCacheEntry>();
 
+// Small, short-lived caches to prevent repeated heavy reads
+let inventoryCache: { map: Map<string, string>; expires: number } | null = null;
+let giftsRemainingCache: { value: Gift[]; expires: number } | null = null;
+
 function cacheKey(boardId: string, columnId: string, value: string) {
   return `${boardId}:${columnId}:${value}`;
 }
@@ -223,7 +227,15 @@ async function findExistsByColumnExact(
   const data = await mondayRequestWithRetry<
     { items_by_column_values?: Array<{ id: string }> },
     { boardId: string; columnId: string; value: string }
-  >(query, { boardId, columnId, value }, { signal });
+  >(
+    query,
+    { boardId, columnId, value },
+    {
+      signal,
+      timeoutMsPerAttempt: 2500,
+      retries: 2,
+    }
+  );
   const exists = (data.items_by_column_values?.length ?? 0) > 0;
   setCached(boardId, columnId, value, exists);
   return exists;
@@ -234,11 +246,12 @@ export async function findUserInBoard(
   columnId: string,
   userId: string,
   pageSize = 500,
-  maxPages = 25
+  maxPages = 10,
+  signal?: AbortSignal
 ): Promise<boolean> {
   // Try the fast path first using items_by_column_values with retries
   try {
-    return await findExistsByColumnExact(boardId, columnId, userId);
+    return await findExistsByColumnExact(boardId, columnId, userId, signal);
   } catch {
     // fall back to paginated scan below
   }
@@ -246,12 +259,16 @@ export async function findUserInBoard(
   let cursor: string | null = null;
   for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
     const data: ItemsPageQueryData =
-      await mondayRequestWithRetry<ItemsPageQueryData>(ITEMS_PAGE_QUERY, {
-        boardId,
-        cursor,
-        limit: pageSize,
-        columnId: [columnId],
-      });
+      await mondayRequestWithRetry<ItemsPageQueryData>(
+        ITEMS_PAGE_QUERY,
+        {
+          boardId,
+          cursor,
+          limit: pageSize,
+          columnId: [columnId],
+        },
+        { timeoutMsPerAttempt: 2500, retries: 1, signal }
+      );
     const firstBoard = Array.isArray(data.boards) ? data.boards[0] : undefined;
     const page = firstBoard?.items_page;
     const items: MondayItem[] = page?.items ?? [];
@@ -331,7 +348,7 @@ export async function countClaimsByGiftTitle(): Promise<
   let cursor: string | null = null;
   const limit = 500;
   const counts: Record<string, number> = {};
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 20; i++) {
     const data: ItemsPageQueryData =
       await mondayRequestWithRetry<ItemsPageQueryData>(
         ITEMS_PAGE_QUERY,
@@ -341,7 +358,7 @@ export async function countClaimsByGiftTitle(): Promise<
           limit,
           columnId: [giftTitleColumnId],
         },
-        { timeoutMsPerAttempt: 6000, retries: 2 }
+        { timeoutMsPerAttempt: 2500, retries: 1 }
       );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
@@ -358,45 +375,66 @@ export async function countClaimsByGiftTitle(): Promise<
 
 // Compute remaining quantities for each configured gift by subtracting claims.
 export async function getGiftsWithRemaining(): Promise<Gift[]> {
+  // Serve from a very short-lived cache to avoid repeated heavy scans during bursts
+  if (giftsRemainingCache && Date.now() < giftsRemainingCache.expires) {
+    return giftsRemainingCache.value;
+  }
   // If an inventory board is configured, prefer using its live stock numbers
   if (
     config.INVENTORY_BOARD_ID &&
     config.INVENTORY_GIFT_ID_COLUMN_ID &&
     config.INVENTORY_STOCK_COLUMN_ID
   ) {
-    const inventory = await getInventoryMap();
-    return baseGifts.map((g) => {
-      const stockStr = inventory.get(g.id);
-      const stock =
-        stockStr != null
-          ? Number((stockStr ?? "").replace(/[^0-9.-]/g, ""))
-          : g.stock ?? 0;
-      const remaining = Math.max(0, Number.isFinite(stock) ? stock : 0);
-      return { ...g, remaining };
-    });
+    try {
+      const inventory = await getInventoryMap();
+      const result = baseGifts.map((g) => {
+        const stockStr = inventory.get(g.id);
+        const stock =
+          stockStr != null
+            ? Number((stockStr ?? "").replace(/[^0-9.-]/g, ""))
+            : g.stock ?? 0;
+        const remaining = Math.max(0, Number.isFinite(stock) ? stock : 0);
+        return { ...g, remaining };
+      });
+      giftsRemainingCache = { value: result, expires: Date.now() + 5000 };
+      return result;
+    } catch (e) {
+      if (giftsRemainingCache) return giftsRemainingCache.value; // stale-if-error
+      throw e;
+    }
   }
 
   // Fallback to static stock minus claims board aggregation
-  const counts = await countClaimsByGiftTitle();
-  return baseGifts.map((g) => {
-    const stock = g.stock ?? 0;
-    const claimed = counts[g.title] || 0;
-    const remaining = Math.max(0, stock - claimed);
-    return { ...g, remaining };
-  });
+  try {
+    const counts = await countClaimsByGiftTitle();
+    const result = baseGifts.map((g) => {
+      const stock = g.stock ?? 0;
+      const claimed = counts[g.title] || 0;
+      const remaining = Math.max(0, stock - claimed);
+      return { ...g, remaining };
+    });
+    giftsRemainingCache = { value: result, expires: Date.now() + 5000 };
+    return result;
+  } catch (e) {
+    if (giftsRemainingCache) return giftsRemainingCache.value; // stale-if-error
+    throw e;
+  }
 }
 
 // ---------- Inventory board helpers ----------
 
 // Fetch the full inventory board into a Map<giftId, stockText>
 export async function getInventoryMap(): Promise<Map<string, string>> {
+  if (inventoryCache && Date.now() < inventoryCache.expires) {
+    return inventoryCache.map;
+  }
   const res = new Map<string, string>();
   const boardId = config.INVENTORY_BOARD_ID!;
   const giftIdCol = config.INVENTORY_GIFT_ID_COLUMN_ID!;
   const stockCol = config.INVENTORY_STOCK_COLUMN_ID!;
   let cursor: string | null = null;
   const limit = 500;
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 20; i++) {
     const data: ItemsPageQueryData = await mondayRequestWithRetry(
       ITEMS_PAGE_QUERY,
       {
@@ -405,7 +443,7 @@ export async function getInventoryMap(): Promise<Map<string, string>> {
         limit,
         columnId: [giftIdCol, stockCol],
       },
-      { timeoutMsPerAttempt: 6000, retries: 2 }
+      { timeoutMsPerAttempt: 2500, retries: 1 }
     );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
@@ -418,6 +456,7 @@ export async function getInventoryMap(): Promise<Map<string, string>> {
     cursor = data?.boards?.[0]?.items_page?.cursor || null;
     if (!cursor) break;
   }
+  inventoryCache = { map: res, expires: Date.now() + 5000 };
   return res;
 }
 
@@ -428,7 +467,7 @@ async function findInventoryItemIdByGiftId(
   const giftIdCol = config.INVENTORY_GIFT_ID_COLUMN_ID!;
   let cursor: string | null = null;
   const limit = 500;
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 20; i++) {
     const data: ItemsPageQueryData = await mondayRequestWithRetry(
       ITEMS_PAGE_QUERY,
       {
@@ -437,7 +476,7 @@ async function findInventoryItemIdByGiftId(
         limit,
         columnId: [giftIdCol],
       },
-      { timeoutMsPerAttempt: 6000, retries: 2 }
+      { timeoutMsPerAttempt: 2500, retries: 1 }
     );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {

@@ -8,6 +8,8 @@ export const preferredRegion = ["fra1"];
 
 export async function GET(request: Request) {
   try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(new Error("timeout")), 4500);
     const start = Date.now();
     const {
       MONDAY_API_KEY,
@@ -35,8 +37,22 @@ export async function GET(request: Request) {
 
     // Parallelize both lookups
     const [eligible, claimed] = await Promise.all([
-      findUserInBoard(USER_BOARD_ID, USER_BOARD_USER_ID_COLUMN_ID, userId),
-      findUserInBoard(CLAIMS_BOARD_ID, CLAIMS_BOARD_USER_ID_COLUMN_ID, userId),
+      findUserInBoard(
+        USER_BOARD_ID,
+        USER_BOARD_USER_ID_COLUMN_ID,
+        userId,
+        undefined,
+        undefined,
+        ac.signal
+      ),
+      findUserInBoard(
+        CLAIMS_BOARD_ID,
+        CLAIMS_BOARD_USER_ID_COLUMN_ID,
+        userId,
+        undefined,
+        undefined,
+        ac.signal
+      ),
     ]);
     if (!eligible)
       return NextResponse.json(
@@ -47,11 +63,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "כבר בחרת מתנה" }, { status: 400 });
     const res = NextResponse.json({ success: true });
     res.headers.set("x-timing-check-gift-total-ms", String(Date.now() - start));
+    clearTimeout(timer);
     return res;
   } catch {
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: "שירות האימות איטי כרגע, נסה/י שוב בעוד רגע" },
+      { status: 503 }
     );
   }
 }
