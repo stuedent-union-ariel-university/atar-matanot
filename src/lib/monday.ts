@@ -149,6 +149,69 @@ const ITEMS_PAGE_QUERY = `
   }
 `;
 
+// ------- Fast lookups and lightweight caching -------
+
+// A very small in-memory cache for board lookups by exact column value.
+// Key: `${boardId}:${columnId}:${value}` -> { value: boolean, expires: number }
+// We avoid caching for the claims board to prevent stale "not yet claimed" responses.
+type BoolCacheEntry = { value: boolean; expires: number };
+const existenceCache = new Map<string, BoolCacheEntry>();
+
+function cacheKey(boardId: string, columnId: string, value: string) {
+  return `${boardId}:${columnId}:${value}`;
+}
+
+function getCached(boardId: string, columnId: string, value: string) {
+  const key = cacheKey(boardId, columnId, value);
+  const entry = existenceCache.get(key);
+  if (!entry) return undefined;
+  if (Date.now() > entry.expires) {
+    existenceCache.delete(key);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function setCached(
+  boardId: string,
+  columnId: string,
+  value: string,
+  result: boolean
+) {
+  // TTLs: for static boards (users/forms) we can cache longer; for claims board, skip caching
+  const isClaims = config.CLAIMS_BOARD_ID && boardId === config.CLAIMS_BOARD_ID;
+  if (isClaims) return; // do not cache claims board results to avoid staleness
+  const ttlMs = 5 * 60 * 1000; // 5 minutes for eligibility boards
+  const key = cacheKey(boardId, columnId, value);
+  existenceCache.set(key, { value: result, expires: Date.now() + ttlMs });
+}
+
+// Fast exact-match lookup via Monday's items_by_column_values GraphQL API.
+// Returns true if any item exists whose column matches the provided value exactly.
+async function findExistsByColumnExact(
+  boardId: string,
+  columnId: string,
+  value: string,
+  signal?: AbortSignal
+): Promise<boolean> {
+  // Check cache first (except claims board)
+  const cached = getCached(boardId, columnId, value);
+  if (typeof cached === "boolean") return cached;
+
+  const query = `
+    query($boardId: ID!, $columnId: String!, $value: String!) {
+      items_by_column_values(board_id: $boardId, column_id: $columnId, column_value: $value) { id }
+    }
+  `;
+  const data = await mondayRequestWithRetry<
+    { items_by_column_values?: Array<{ id: string }> },
+    { boardId: string; columnId: string; value: string }
+  >(query, { boardId, columnId, value }, { signal });
+  const exists = (data.items_by_column_values?.length ?? 0) > 0;
+  setCached(boardId, columnId, value, exists);
+  return exists;
+}
+
 export async function findUserInBoard(
   boardId: string,
   columnId: string,
@@ -156,17 +219,22 @@ export async function findUserInBoard(
   pageSize = 500,
   maxPages = 25
 ): Promise<boolean> {
+  // Try the fast path first using items_by_column_values with retries
+  try {
+    return await findExistsByColumnExact(boardId, columnId, userId);
+  } catch {
+    // fall back to paginated scan below
+  }
+
   let cursor: string | null = null;
   for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
-    const data: ItemsPageQueryData = await mondayRequest<ItemsPageQueryData>(
-      ITEMS_PAGE_QUERY,
-      {
+    const data: ItemsPageQueryData =
+      await mondayRequestWithRetry<ItemsPageQueryData>(ITEMS_PAGE_QUERY, {
         boardId,
         cursor,
         limit: pageSize,
         columnId: [columnId],
-      }
-    );
+      });
     const firstBoard = Array.isArray(data.boards) ? data.boards[0] : undefined;
     const page = firstBoard?.items_page;
     const items: MondayItem[] = page?.items ?? [];
@@ -177,11 +245,13 @@ export async function findUserInBoard(
         )
       )
     ) {
+      setCached(boardId, columnId, userId, true);
       return true;
     }
     cursor = page?.cursor || null;
     if (!cursor) break; // No more pages
   }
+  setCached(boardId, columnId, userId, false);
   return false;
 }
 
