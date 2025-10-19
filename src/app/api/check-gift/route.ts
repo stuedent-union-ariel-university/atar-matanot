@@ -2,8 +2,12 @@ import { config } from "@/lib/config";
 import { NextResponse } from "next/server";
 import { findUserInBoard } from "@/lib/monday";
 
+// Run this route on the Edge Runtime for faster cold starts
+export const runtime = "edge";
+
 export async function GET(request: Request) {
   try {
+    const start = Date.now();
     const {
       MONDAY_API_KEY,
       USER_BOARD_ID,
@@ -28,26 +32,21 @@ export async function GET(request: Request) {
     if (!userId)
       return NextResponse.json({ error: "מספר זהות נדרש" }, { status: 400 });
 
-    const eligible = await findUserInBoard(
-      USER_BOARD_ID,
-      USER_BOARD_USER_ID_COLUMN_ID,
-      userId
-    );
+    // Parallelize both lookups
+    const [eligible, claimed] = await Promise.all([
+      findUserInBoard(USER_BOARD_ID, USER_BOARD_USER_ID_COLUMN_ID, userId),
+      findUserInBoard(CLAIMS_BOARD_ID, CLAIMS_BOARD_USER_ID_COLUMN_ID, userId),
+    ]);
     if (!eligible)
       return NextResponse.json(
         { error: "נראה שאתה לא ברשימת משלמי דמי הרווחה" },
         { status: 403 }
       );
-
-    const claimed = await findUserInBoard(
-      CLAIMS_BOARD_ID,
-      CLAIMS_BOARD_USER_ID_COLUMN_ID,
-      userId
-    );
     if (claimed)
       return NextResponse.json({ error: "כבר בחרת מתנה" }, { status: 400 });
-
-    return NextResponse.json({ success: true });
+    const res = NextResponse.json({ success: true });
+    res.headers.set("x-timing-check-gift-total-ms", String(Date.now() - start));
+    return res;
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

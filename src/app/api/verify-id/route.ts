@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+
+// Run this route on the Edge Runtime for faster cold starts
+export const runtime = "edge";
 import { config } from "@/lib/config";
 import { findUserInBoard } from "@/lib/monday";
 
@@ -6,6 +9,7 @@ import { findUserInBoard } from "@/lib/monday";
 // and has NOT appeared yet in the claims board.
 export async function GET(request: Request) {
   try {
+    const reqStart = Date.now();
     const {
       MONDAY_API_KEY,
       USER_BOARD_ID,
@@ -37,30 +41,62 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "מספר זהות נדרש" }, { status: 400 });
     }
 
-    // Check the three conditions in parallel for efficiency
-    const [inUserBoard, inFormBoard, alreadyClaimed] = await Promise.all([
+    // First check claims board; if already claimed, short-circuit early
+    const t1 = Date.now();
+    const alreadyClaimed = await findUserInBoard(
+      CLAIMS_BOARD_ID,
+      CLAIMS_BOARD_USER_ID_COLUMN_ID,
+      userId
+    );
+    const tClaim = Date.now();
+    if (alreadyClaimed) {
+      const res = NextResponse.json(
+        { error: "כבר בחרת מתנה" },
+        { status: 400 }
+      );
+      res.headers.set("x-timing-verify-claims-ms", String(tClaim - t1));
+      res.headers.set(
+        "x-timing-verify-total-ms",
+        String(Date.now() - reqStart)
+      );
+      return res;
+    }
+
+    // Check the two eligibility boards in parallel
+    const [inUserBoard, inFormBoard] = await Promise.all([
       findUserInBoard(USER_BOARD_ID, USER_BOARD_USER_ID_COLUMN_ID, userId),
       findUserInBoard(FORM_BOARD_ID, FORM_BOARD_USER_ID_COLUMN_ID, userId),
-      findUserInBoard(CLAIMS_BOARD_ID, CLAIMS_BOARD_USER_ID_COLUMN_ID, userId),
     ]);
+    const tElig = Date.now();
 
     if (!inUserBoard) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: "לא נמצאת/ת ברשימת הזכאים" },
         { status: 403 }
       );
+      res.headers.set("x-timing-verify-elig-ms", String(tElig - tClaim));
+      res.headers.set(
+        "x-timing-verify-total-ms",
+        String(Date.now() - reqStart)
+      );
+      return res;
     }
     if (!inFormBoard) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: "לא נמצאה תשובה בסקר האגודה" },
         { status: 403 }
       );
+      res.headers.set("x-timing-verify-elig-ms", String(tElig - tClaim));
+      res.headers.set(
+        "x-timing-verify-total-ms",
+        String(Date.now() - reqStart)
+      );
+      return res;
     }
-    if (alreadyClaimed) {
-      return NextResponse.json({ error: "כבר בחרת מתנה" }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true });
+    const res = NextResponse.json({ success: true });
+    res.headers.set("x-timing-verify-elig-ms", String(tElig - tClaim));
+    res.headers.set("x-timing-verify-total-ms", String(Date.now() - reqStart));
+    return res;
   } catch (e) {
     return NextResponse.json(
       { error: "Internal server error" },
