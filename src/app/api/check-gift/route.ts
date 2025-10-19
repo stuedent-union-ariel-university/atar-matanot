@@ -1,6 +1,6 @@
 import { config } from "@/lib/config";
 import { NextResponse } from "next/server";
-import { findUserInBoard } from "@/lib/monday";
+import { findUserInBoardByColumnValues } from "@/lib/monday";
 
 export async function GET(request: Request) {
   try {
@@ -28,7 +28,8 @@ export async function GET(request: Request) {
     if (!userId)
       return NextResponse.json({ error: "מספר זהות נדרש" }, { status: 400 });
 
-    const eligible = await findUserInBoard(
+    // Use Monday's items_page_by_column_values for efficient server-side filtering
+    const eligible = await findUserInBoardByColumnValues(
       USER_BOARD_ID,
       USER_BOARD_USER_ID_COLUMN_ID,
       userId
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
         { status: 403 }
       );
 
-    const claimed = await findUserInBoard(
+    const claimed = await findUserInBoardByColumnValues(
       CLAIMS_BOARD_ID,
       CLAIMS_BOARD_USER_ID_COLUMN_ID,
       userId
