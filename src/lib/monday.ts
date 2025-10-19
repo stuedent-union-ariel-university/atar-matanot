@@ -17,11 +17,6 @@ export async function mondayRequest<
   variables?: TVars,
   opts?: { signal?: AbortSignal; timeoutMs?: number }
 ): Promise<TData> {
-  const ac = new AbortController();
-  const timer = setTimeout(
-    () => ac.abort(new Error("mondayRequest: timeout")),
-    opts?.timeoutMs ?? 8000
-  );
   const response = await fetch(config.MONDAY_API_URL, {
     method: "POST",
     headers: {
@@ -29,9 +24,8 @@ export async function mondayRequest<
       Authorization: `Bearer ${config.MONDAY_API_KEY || ""}`,
     },
     body: JSON.stringify({ query, variables }),
-    cache: "no-store",
-    signal: opts?.signal ?? ac.signal,
-  }).finally(() => clearTimeout(timer));
+    signal: opts?.signal,
+  });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const json = (await response.json()) as {
     data: TData;
@@ -67,7 +61,8 @@ export async function mondayRequestWithRetry<
     maxDelayMs = 2500,
     jitterMs = 250,
     signal,
-    timeoutMsPerAttempt = 8000,
+    // timeout disabled to avoid abort-related errors
+    timeoutMsPerAttempt = 0,
   } = options || {};
 
   const sleep = (ms: number) =>
@@ -84,11 +79,6 @@ export async function mondayRequestWithRetry<
   // eslint-disable-next-line no-constant-condition
   while (true) {
     attempt++;
-    const ac = new AbortController();
-    const timer = setTimeout(
-      () => ac.abort(new Error("mondayRequestWithRetry: timeout")),
-      timeoutMsPerAttempt
-    );
     const response = await fetch(config.MONDAY_API_URL, {
       method: "POST",
       headers: {
@@ -96,9 +86,8 @@ export async function mondayRequestWithRetry<
         Authorization: `Bearer ${config.MONDAY_API_KEY || ""}`,
       },
       body: JSON.stringify({ query, variables }),
-      cache: "no-store",
-      signal: signal ?? ac.signal,
-    }).finally(() => clearTimeout(timer));
+      signal: signal,
+    });
 
     // Handle HTTP errors
     if (!response.ok) {
@@ -166,47 +155,6 @@ const ITEMS_PAGE_QUERY = `
   }
 `;
 
-// ------- Fast lookups and lightweight caching -------
-
-// A very small in-memory cache for board lookups by exact column value.
-// Key: `${boardId}:${columnId}:${value}` -> { value: boolean, expires: number }
-// We avoid caching for the claims board to prevent stale "not yet claimed" responses.
-type BoolCacheEntry = { value: boolean; expires: number };
-const existenceCache = new Map<string, BoolCacheEntry>();
-
-// Small, short-lived caches to prevent repeated heavy reads
-let inventoryCache: { map: Map<string, string>; expires: number } | null = null;
-let giftsRemainingCache: { value: Gift[]; expires: number } | null = null;
-
-function cacheKey(boardId: string, columnId: string, value: string) {
-  return `${boardId}:${columnId}:${value}`;
-}
-
-function getCached(boardId: string, columnId: string, value: string) {
-  const key = cacheKey(boardId, columnId, value);
-  const entry = existenceCache.get(key);
-  if (!entry) return undefined;
-  if (Date.now() > entry.expires) {
-    existenceCache.delete(key);
-    return undefined;
-  }
-  return entry.value;
-}
-
-function setCached(
-  boardId: string,
-  columnId: string,
-  value: string,
-  result: boolean
-) {
-  // TTLs: for static boards (users/forms) we can cache longer; for claims board, skip caching
-  const isClaims = config.CLAIMS_BOARD_ID && boardId === config.CLAIMS_BOARD_ID;
-  if (isClaims) return; // do not cache claims board results to avoid staleness
-  const ttlMs = 5 * 60 * 1000; // 5 minutes for eligibility boards
-  const key = cacheKey(boardId, columnId, value);
-  existenceCache.set(key, { value: result, expires: Date.now() + ttlMs });
-}
-
 // Fast exact-match lookup via Monday's items_by_column_values GraphQL API.
 // Returns true if any item exists whose column matches the provided value exactly.
 async function findExistsByColumnExact(
@@ -215,10 +163,6 @@ async function findExistsByColumnExact(
   value: string,
   signal?: AbortSignal
 ): Promise<boolean> {
-  // Check cache first (except claims board)
-  const cached = getCached(boardId, columnId, value);
-  if (typeof cached === "boolean") return cached;
-
   const query = `
     query($boardId: ID!, $columnId: String!, $value: String!) {
       items_by_column_values(board_id: $boardId, column_id: $columnId, column_value: $value) { id }
@@ -232,12 +176,12 @@ async function findExistsByColumnExact(
     { boardId, columnId, value },
     {
       signal,
-      timeoutMsPerAttempt: 2500,
+      // no per-attempt timeout
+      timeoutMsPerAttempt: 0,
       retries: 2,
     }
   );
   const exists = (data.items_by_column_values?.length ?? 0) > 0;
-  setCached(boardId, columnId, value, exists);
   return exists;
 }
 
@@ -267,7 +211,7 @@ export async function findUserInBoard(
           limit: pageSize,
           columnId: [columnId],
         },
-        { timeoutMsPerAttempt: 2500, retries: 1, signal }
+        { timeoutMsPerAttempt: 0, retries: 1, signal }
       );
     const firstBoard = Array.isArray(data.boards) ? data.boards[0] : undefined;
     const page = firstBoard?.items_page;
@@ -279,13 +223,11 @@ export async function findUserInBoard(
         )
       )
     ) {
-      setCached(boardId, columnId, userId, true);
       return true;
     }
     cursor = page?.cursor || null;
     if (!cursor) break; // No more pages
   }
-  setCached(boardId, columnId, userId, false);
   return false;
 }
 
@@ -375,10 +317,6 @@ export async function countClaimsByGiftTitle(): Promise<
 
 // Compute remaining quantities for each configured gift by subtracting claims.
 export async function getGiftsWithRemaining(): Promise<Gift[]> {
-  // Serve from a very short-lived cache to avoid repeated heavy scans during bursts
-  if (giftsRemainingCache && Date.now() < giftsRemainingCache.expires) {
-    return giftsRemainingCache.value;
-  }
   // If an inventory board is configured, prefer using its live stock numbers
   if (
     config.INVENTORY_BOARD_ID &&
@@ -396,10 +334,8 @@ export async function getGiftsWithRemaining(): Promise<Gift[]> {
         const remaining = Math.max(0, Number.isFinite(stock) ? stock : 0);
         return { ...g, remaining };
       });
-      giftsRemainingCache = { value: result, expires: Date.now() + 5000 };
       return result;
     } catch (e) {
-      if (giftsRemainingCache) return giftsRemainingCache.value; // stale-if-error
       throw e;
     }
   }
@@ -413,10 +349,8 @@ export async function getGiftsWithRemaining(): Promise<Gift[]> {
       const remaining = Math.max(0, stock - claimed);
       return { ...g, remaining };
     });
-    giftsRemainingCache = { value: result, expires: Date.now() + 5000 };
     return result;
   } catch (e) {
-    if (giftsRemainingCache) return giftsRemainingCache.value; // stale-if-error
     throw e;
   }
 }
@@ -425,9 +359,6 @@ export async function getGiftsWithRemaining(): Promise<Gift[]> {
 
 // Fetch the full inventory board into a Map<giftId, stockText>
 export async function getInventoryMap(): Promise<Map<string, string>> {
-  if (inventoryCache && Date.now() < inventoryCache.expires) {
-    return inventoryCache.map;
-  }
   const res = new Map<string, string>();
   const boardId = config.INVENTORY_BOARD_ID!;
   const giftIdCol = config.INVENTORY_GIFT_ID_COLUMN_ID!;
@@ -443,7 +374,7 @@ export async function getInventoryMap(): Promise<Map<string, string>> {
         limit,
         columnId: [giftIdCol, stockCol],
       },
-      { timeoutMsPerAttempt: 2500, retries: 1 }
+      { timeoutMsPerAttempt: 0, retries: 1 }
     );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
@@ -456,7 +387,6 @@ export async function getInventoryMap(): Promise<Map<string, string>> {
     cursor = data?.boards?.[0]?.items_page?.cursor || null;
     if (!cursor) break;
   }
-  inventoryCache = { map: res, expires: Date.now() + 5000 };
   return res;
 }
 
@@ -476,7 +406,7 @@ async function findInventoryItemIdByGiftId(
         limit,
         columnId: [giftIdCol],
       },
-      { timeoutMsPerAttempt: 2500, retries: 1 }
+      { timeoutMsPerAttempt: 0, retries: 1 }
     );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {

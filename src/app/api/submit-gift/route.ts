@@ -18,9 +18,6 @@ export const preferredRegion = ["fra1"];
 
 export async function POST(request: Request) {
   try {
-    const ac = new AbortController();
-    // allow a bit longer here due to inventory mutation, but still bounded
-    const timer = setTimeout(() => ac.abort(new Error("timeout")), 8000);
     if (!config.MONDAY_API_KEY || !config.CLAIMS_BOARD_ID) {
       return NextResponse.json(
         { error: "Server configuration error" },
@@ -56,7 +53,7 @@ export async function POST(request: Request) {
       userId,
       undefined,
       undefined,
-      ac.signal
+      undefined
     );
     if (hasClaim) {
       return NextResponse.json(
@@ -125,7 +122,6 @@ export async function POST(request: Request) {
     }
 
     const res = NextResponse.json({ success: true });
-    clearTimeout(timer);
     return res;
   } catch (error) {
     console.error("Error submitting gift:", error);

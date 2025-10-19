@@ -10,8 +10,6 @@ import { findUserInBoard } from "@/lib/monday";
 // and has NOT appeared yet in the claims board.
 export async function GET(request: Request) {
   try {
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(new Error("timeout")), 6000);
     const reqStart = Date.now();
     const {
       MONDAY_API_KEY,
@@ -52,7 +50,7 @@ export async function GET(request: Request) {
       userId,
       undefined,
       undefined,
-      ac.signal
+      undefined
     );
     const tClaim = Date.now();
     if (alreadyClaimed) {
@@ -76,7 +74,7 @@ export async function GET(request: Request) {
         userId,
         undefined,
         undefined,
-        ac.signal
+        undefined
       ),
       findUserInBoard(
         FORM_BOARD_ID,
@@ -84,7 +82,7 @@ export async function GET(request: Request) {
         userId,
         undefined,
         undefined,
-        ac.signal
+        undefined
       ),
     ]);
     const tElig = Date.now();
@@ -116,7 +114,6 @@ export async function GET(request: Request) {
     const res = NextResponse.json({ success: true });
     res.headers.set("x-timing-verify-elig-ms", String(tElig - tClaim));
     res.headers.set("x-timing-verify-total-ms", String(Date.now() - reqStart));
-    clearTimeout(timer);
     return res;
   } catch (e) {
     return NextResponse.json(
