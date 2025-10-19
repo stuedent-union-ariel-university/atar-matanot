@@ -12,7 +12,16 @@ import { gifts as baseGifts, type Gift } from "@/lib/gifts";
 export async function mondayRequest<
   TData,
   TVars extends Record<string, unknown> = Record<string, unknown>
->(query: string, variables?: TVars): Promise<TData> {
+>(
+  query: string,
+  variables?: TVars,
+  opts?: { signal?: AbortSignal; timeoutMs?: number }
+): Promise<TData> {
+  const ac = new AbortController();
+  const timer = setTimeout(
+    () => ac.abort(new Error("mondayRequest: timeout")),
+    opts?.timeoutMs ?? 8000
+  );
   const response = await fetch(config.MONDAY_API_URL, {
     method: "POST",
     headers: {
@@ -21,7 +30,8 @@ export async function mondayRequest<
     },
     body: JSON.stringify({ query, variables }),
     cache: "no-store",
-  });
+    signal: opts?.signal ?? ac.signal,
+  }).finally(() => clearTimeout(timer));
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const json = (await response.json()) as {
     data: TData;
@@ -48,14 +58,16 @@ export async function mondayRequestWithRetry<
     maxDelayMs?: number; // cap backoff
     jitterMs?: number; // extra random jitter
     signal?: AbortSignal;
+    timeoutMsPerAttempt?: number;
   }
 ): Promise<TData> {
   const {
-    retries = 7,
-    minDelayMs = 250,
-    maxDelayMs = 5000,
+    retries = 4,
+    minDelayMs = 200,
+    maxDelayMs = 2500,
     jitterMs = 250,
     signal,
+    timeoutMsPerAttempt = 8000,
   } = options || {};
 
   const sleep = (ms: number) =>
@@ -72,6 +84,11 @@ export async function mondayRequestWithRetry<
   // eslint-disable-next-line no-constant-condition
   while (true) {
     attempt++;
+    const ac = new AbortController();
+    const timer = setTimeout(
+      () => ac.abort(new Error("mondayRequestWithRetry: timeout")),
+      timeoutMsPerAttempt
+    );
     const response = await fetch(config.MONDAY_API_URL, {
       method: "POST",
       headers: {
@@ -80,8 +97,8 @@ export async function mondayRequestWithRetry<
       },
       body: JSON.stringify({ query, variables }),
       cache: "no-store",
-      signal,
-    });
+      signal: signal ?? ac.signal,
+    }).finally(() => clearTimeout(timer));
 
     // Handle HTTP errors
     if (!response.ok) {
@@ -315,15 +332,17 @@ export async function countClaimsByGiftTitle(): Promise<
   const limit = 500;
   const counts: Record<string, number> = {};
   for (let i = 0; i < 50; i++) {
-    const data: ItemsPageQueryData = await mondayRequest<ItemsPageQueryData>(
-      ITEMS_PAGE_QUERY,
-      {
-        boardId: claimsBoardId,
-        cursor,
-        limit,
-        columnId: [giftTitleColumnId],
-      }
-    );
+    const data: ItemsPageQueryData =
+      await mondayRequestWithRetry<ItemsPageQueryData>(
+        ITEMS_PAGE_QUERY,
+        {
+          boardId: claimsBoardId,
+          cursor,
+          limit,
+          columnId: [giftTitleColumnId],
+        },
+        { timeoutMsPerAttempt: 6000, retries: 2 }
+      );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
       const title =
@@ -378,12 +397,16 @@ export async function getInventoryMap(): Promise<Map<string, string>> {
   let cursor: string | null = null;
   const limit = 500;
   for (let i = 0; i < 50; i++) {
-    const data: ItemsPageQueryData = await mondayRequest(ITEMS_PAGE_QUERY, {
-      boardId,
-      cursor,
-      limit,
-      columnId: [giftIdCol, stockCol],
-    });
+    const data: ItemsPageQueryData = await mondayRequestWithRetry(
+      ITEMS_PAGE_QUERY,
+      {
+        boardId,
+        cursor,
+        limit,
+        columnId: [giftIdCol, stockCol],
+      },
+      { timeoutMsPerAttempt: 6000, retries: 2 }
+    );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
       const giftId = item.column_values?.find((c) => c.id === giftIdCol)?.text;
@@ -406,12 +429,16 @@ async function findInventoryItemIdByGiftId(
   let cursor: string | null = null;
   const limit = 500;
   for (let i = 0; i < 50; i++) {
-    const data: ItemsPageQueryData = await mondayRequest(ITEMS_PAGE_QUERY, {
-      boardId,
-      cursor,
-      limit,
-      columnId: [giftIdCol],
-    });
+    const data: ItemsPageQueryData = await mondayRequestWithRetry(
+      ITEMS_PAGE_QUERY,
+      {
+        boardId,
+        cursor,
+        limit,
+        columnId: [giftIdCol],
+      },
+      { timeoutMsPerAttempt: 6000, retries: 2 }
+    );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
       const idText = item.column_values?.find((c) => c.id === giftIdCol)?.text;

@@ -10,6 +10,11 @@ import {
   incrementInventoryForGiftId,
 } from "@/lib/monday";
 import { gifts } from "@/lib/gifts";
+import { findUserInBoard } from "@/lib/monday";
+
+// Edge runtime reduces cold starts for user submissions
+export const runtime = "edge";
+export const preferredRegion = ["fra1"];
 
 export async function POST(request: Request) {
   try {
@@ -41,37 +46,13 @@ export async function POST(request: Request) {
     const giftTitleColumnId =
       config.CLAIMS_BOARD_GIFT_TITLE_COLUMN_ID || "text1";
 
-    const checkQuery = `
-      query($boardId: [ID!], $columnIds: [String!], $limit: Int) {
-        boards(ids: $boardId) {
-          id
-          items_page(limit: $limit) {
-            items {
-              id
-              column_values(ids: $columnIds) {
-                id
-                text
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    const checkResult: any = await mondayQueryRaw(checkQuery, {
-      boardId: config.CLAIMS_BOARD_ID,
-      columnIds: Array.from(new Set([userColumnId, giftTitleColumnId])),
-      limit: 500,
-    });
-
-    const items = checkResult?.boards?.[0]?.items_page?.items || [];
-    const existingClaim = items.find((item: any) =>
-      item.column_values?.some(
-        (col: any) => col.id === userColumnId && col.text === userId
-      )
+    // Fast existence check using Monday's items_by_column_values API
+    const hasClaim = await findUserInBoard(
+      config.CLAIMS_BOARD_ID,
+      userColumnId,
+      userId
     );
-
-    if (existingClaim) {
+    if (hasClaim) {
       return NextResponse.json(
         { error: "כבר בחרת מתנה בעבר" },
         { status: 400 }

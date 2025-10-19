@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 // Run this route on the Edge Runtime for faster cold starts
 export const runtime = "edge";
+export const preferredRegion = ["fra1"];
 import { config } from "@/lib/config";
 import { findUserInBoard } from "@/lib/monday";
 

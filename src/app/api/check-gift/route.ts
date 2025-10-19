@@ -4,6 +4,7 @@ import { findUserInBoard } from "@/lib/monday";
 
 // Run this route on the Edge Runtime for faster cold starts
 export const runtime = "edge";
+export const preferredRegion = ["fra1"];
 
 export async function GET(request: Request) {
   try {
