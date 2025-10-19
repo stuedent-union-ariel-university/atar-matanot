@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "upload:gifts": "tsx scripts/upload-gifts-to-monday.ts",
+    "upload:users:xlsx": "tsx scripts/upload-users-from-xlsx.ts",
     "seed:users": "tsx scripts/add-users-to-monday.ts --count 10000",
     "clean:users": "tsx scripts/remove-users-from-monday.ts --yes",
     "clean:users:dry": "tsx scripts/remove-users-from-monday.ts",
@@ -17,7 +18,8 @@
     "next": "15.5.4",
     "react": "19.1.0",
     "react-confetti": "^6.4.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -25,13 +27,14 @@
     "@types/node": "^20.19.19",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.1",
+    "@types/xlsx": "^0.0.36",
     "dotenv": "^17.2.3",
     "eslint": "^9.37.0",
     "eslint-config-next": "15.5.4",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^2.1.5",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.19.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.5"
   }
 }
