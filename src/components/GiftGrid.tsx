@@ -57,7 +57,7 @@ export default function GiftGrid() {
   useEffect(() => {
     const fetchGifts = async () => {
       try {
-        const res = await fetch(config.API_GIFTS_URL);
+        const res = await fetch(config.API_GIFTS_URL, { cache: "no-store" });
         if (!res.ok) return; // silent fail
         const data = await res.json();
         setGifts(data.gifts || []);

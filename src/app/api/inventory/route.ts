@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { getInventoryMap } from "@/lib/monday";
 
-export const runtime = "edge";
-export const preferredRegion = ["fra1"];
-
 export async function GET() {
   try {
     const map = await getInventoryMap();

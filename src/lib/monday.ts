@@ -12,11 +12,7 @@ import { gifts as baseGifts, type Gift } from "@/lib/gifts";
 export async function mondayRequest<
   TData,
   TVars extends Record<string, unknown> = Record<string, unknown>
->(
-  query: string,
-  variables?: TVars,
-  opts?: { signal?: AbortSignal; timeoutMs?: number }
-): Promise<TData> {
+>(query: string, variables?: TVars): Promise<TData> {
   const response = await fetch(config.MONDAY_API_URL, {
     method: "POST",
     headers: {
@@ -24,7 +20,7 @@ export async function mondayRequest<
       Authorization: `Bearer ${config.MONDAY_API_KEY || ""}`,
     },
     body: JSON.stringify({ query, variables }),
-    signal: opts?.signal,
+    cache: "no-store",
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const json = (await response.json()) as {
@@ -52,17 +48,14 @@ export async function mondayRequestWithRetry<
     maxDelayMs?: number; // cap backoff
     jitterMs?: number; // extra random jitter
     signal?: AbortSignal;
-    timeoutMsPerAttempt?: number;
   }
 ): Promise<TData> {
   const {
-    retries = 4,
-    minDelayMs = 200,
-    maxDelayMs = 2500,
+    retries = 7,
+    minDelayMs = 250,
+    maxDelayMs = 5000,
     jitterMs = 250,
     signal,
-    // timeout disabled to avoid abort-related errors
-    timeoutMsPerAttempt = 0,
   } = options || {};
 
   const sleep = (ms: number) =>
@@ -86,7 +79,8 @@ export async function mondayRequestWithRetry<
         Authorization: `Bearer ${config.MONDAY_API_KEY || ""}`,
       },
       body: JSON.stringify({ query, variables }),
-      signal: signal,
+      cache: "no-store",
+      signal,
     });
 
     // Handle HTTP errors
@@ -155,64 +149,24 @@ const ITEMS_PAGE_QUERY = `
   }
 `;
 
-// Fast exact-match lookup via Monday's items_by_column_values GraphQL API.
-// Returns true if any item exists whose column matches the provided value exactly.
-async function findExistsByColumnExact(
-  boardId: string,
-  columnId: string,
-  value: string,
-  signal?: AbortSignal
-): Promise<boolean> {
-  const query = `
-    query($boardId: ID!, $columnId: String!, $value: String!) {
-      items_by_column_values(board_id: $boardId, column_id: $columnId, column_value: $value) { id }
-    }
-  `;
-  const data = await mondayRequestWithRetry<
-    { items_by_column_values?: Array<{ id: string }> },
-    { boardId: string; columnId: string; value: string }
-  >(
-    query,
-    { boardId, columnId, value },
-    {
-      signal,
-      // no per-attempt timeout
-      timeoutMsPerAttempt: 0,
-      retries: 2,
-    }
-  );
-  const exists = (data.items_by_column_values?.length ?? 0) > 0;
-  return exists;
-}
-
 export async function findUserInBoard(
   boardId: string,
   columnId: string,
   userId: string,
   pageSize = 500,
-  maxPages = 10,
-  signal?: AbortSignal
+  maxPages = 25
 ): Promise<boolean> {
-  // Try the fast path first using items_by_column_values with retries
-  try {
-    return await findExistsByColumnExact(boardId, columnId, userId, signal);
-  } catch {
-    // fall back to paginated scan below
-  }
-
   let cursor: string | null = null;
   for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
-    const data: ItemsPageQueryData =
-      await mondayRequestWithRetry<ItemsPageQueryData>(
-        ITEMS_PAGE_QUERY,
-        {
-          boardId,
-          cursor,
-          limit: pageSize,
-          columnId: [columnId],
-        },
-        { timeoutMsPerAttempt: 0, retries: 1, signal }
-      );
+    const data: ItemsPageQueryData = await mondayRequest<ItemsPageQueryData>(
+      ITEMS_PAGE_QUERY,
+      {
+        boardId,
+        cursor,
+        limit: pageSize,
+        columnId: [columnId],
+      }
+    );
     const firstBoard = Array.isArray(data.boards) ? data.boards[0] : undefined;
     const page = firstBoard?.items_page;
     const items: MondayItem[] = page?.items ?? [];
@@ -290,18 +244,16 @@ export async function countClaimsByGiftTitle(): Promise<
   let cursor: string | null = null;
   const limit = 500;
   const counts: Record<string, number> = {};
-  for (let i = 0; i < 20; i++) {
-    const data: ItemsPageQueryData =
-      await mondayRequestWithRetry<ItemsPageQueryData>(
-        ITEMS_PAGE_QUERY,
-        {
-          boardId: claimsBoardId,
-          cursor,
-          limit,
-          columnId: [giftTitleColumnId],
-        },
-        { timeoutMsPerAttempt: 2500, retries: 1 }
-      );
+  for (let i = 0; i < 50; i++) {
+    const data: ItemsPageQueryData = await mondayRequest<ItemsPageQueryData>(
+      ITEMS_PAGE_QUERY,
+      {
+        boardId: claimsBoardId,
+        cursor,
+        limit,
+        columnId: [giftTitleColumnId],
+      }
+    );
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
       const title =
@@ -323,36 +275,26 @@ export async function getGiftsWithRemaining(): Promise<Gift[]> {
     config.INVENTORY_GIFT_ID_COLUMN_ID &&
     config.INVENTORY_STOCK_COLUMN_ID
   ) {
-    try {
-      const inventory = await getInventoryMap();
-      const result = baseGifts.map((g) => {
-        const stockStr = inventory.get(g.id);
-        const stock =
-          stockStr != null
-            ? Number((stockStr ?? "").replace(/[^0-9.-]/g, ""))
-            : g.stock ?? 0;
-        const remaining = Math.max(0, Number.isFinite(stock) ? stock : 0);
-        return { ...g, remaining };
-      });
-      return result;
-    } catch (e) {
-      throw e;
-    }
+    const inventory = await getInventoryMap();
+    return baseGifts.map((g) => {
+      const stockStr = inventory.get(g.id);
+      const stock =
+        stockStr != null
+          ? Number((stockStr ?? "").replace(/[^0-9.-]/g, ""))
+          : g.stock ?? 0;
+      const remaining = Math.max(0, Number.isFinite(stock) ? stock : 0);
+      return { ...g, remaining };
+    });
   }
 
   // Fallback to static stock minus claims board aggregation
-  try {
-    const counts = await countClaimsByGiftTitle();
-    const result = baseGifts.map((g) => {
-      const stock = g.stock ?? 0;
-      const claimed = counts[g.title] || 0;
-      const remaining = Math.max(0, stock - claimed);
-      return { ...g, remaining };
-    });
-    return result;
-  } catch (e) {
-    throw e;
-  }
+  const counts = await countClaimsByGiftTitle();
+  return baseGifts.map((g) => {
+    const stock = g.stock ?? 0;
+    const claimed = counts[g.title] || 0;
+    const remaining = Math.max(0, stock - claimed);
+    return { ...g, remaining };
+  });
 }
 
 // ---------- Inventory board helpers ----------
@@ -365,17 +307,13 @@ export async function getInventoryMap(): Promise<Map<string, string>> {
   const stockCol = config.INVENTORY_STOCK_COLUMN_ID!;
   let cursor: string | null = null;
   const limit = 500;
-  for (let i = 0; i < 20; i++) {
-    const data: ItemsPageQueryData = await mondayRequestWithRetry(
-      ITEMS_PAGE_QUERY,
-      {
-        boardId,
-        cursor,
-        limit,
-        columnId: [giftIdCol, stockCol],
-      },
-      { timeoutMsPerAttempt: 0, retries: 1 }
-    );
+  for (let i = 0; i < 50; i++) {
+    const data: ItemsPageQueryData = await mondayRequest(ITEMS_PAGE_QUERY, {
+      boardId,
+      cursor,
+      limit,
+      columnId: [giftIdCol, stockCol],
+    });
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
       const giftId = item.column_values?.find((c) => c.id === giftIdCol)?.text;
@@ -397,17 +335,13 @@ async function findInventoryItemIdByGiftId(
   const giftIdCol = config.INVENTORY_GIFT_ID_COLUMN_ID!;
   let cursor: string | null = null;
   const limit = 500;
-  for (let i = 0; i < 20; i++) {
-    const data: ItemsPageQueryData = await mondayRequestWithRetry(
-      ITEMS_PAGE_QUERY,
-      {
-        boardId,
-        cursor,
-        limit,
-        columnId: [giftIdCol],
-      },
-      { timeoutMsPerAttempt: 0, retries: 1 }
-    );
+  for (let i = 0; i < 50; i++) {
+    const data: ItemsPageQueryData = await mondayRequest(ITEMS_PAGE_QUERY, {
+      boardId,
+      cursor,
+      limit,
+      columnId: [giftIdCol],
+    });
     const items = data?.boards?.[0]?.items_page?.items ?? [];
     for (const item of items) {
       const idText = item.column_values?.find((c) => c.id === giftIdCol)?.text;
