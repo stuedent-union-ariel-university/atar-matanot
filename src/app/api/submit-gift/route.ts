@@ -8,6 +8,7 @@ import {
   decrementInventoryForGiftId,
   getCurrentStockForGiftId,
   incrementInventoryForGiftId,
+  getUserNameById,
 } from "@/lib/monday";
 import { gifts } from "@/lib/gifts";
 
@@ -120,9 +121,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create new item in claims board to log the redemption
+    // Fetch user name (best-effort) to store on claims board
+    let userName: string | null = null;
     try {
-      await createClaimItem(config.CLAIMS_BOARD_ID, userId, gift.title);
+      userName = await getUserNameById(userId);
+    } catch {}
+
+    // Create new item in claims board to log the redemption; include user name if available
+    try {
+      await createClaimItem(
+        config.CLAIMS_BOARD_ID,
+        userId,
+        gift.title,
+        userName ?? undefined
+      );
     } catch (e) {
       // Compensation: if inventory was decremented, add it back
       if (

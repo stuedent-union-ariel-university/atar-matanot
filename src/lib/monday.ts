@@ -233,13 +233,68 @@ export async function mondayQueryRaw<
   return mondayRequest<TData, TVars>(query, variables);
 }
 
+// Fetch the user's display name from the user board given their ID
+export async function getUserNameById(userId: string): Promise<string | null> {
+  const {
+    USER_BOARD_ID,
+    USER_BOARD_USER_ID_COLUMN_ID,
+    USER_BOARD_USER_NAME_COLUMN_ID,
+  } = config;
+  if (!USER_BOARD_ID || !USER_BOARD_USER_ID_COLUMN_ID) return null;
+
+  const QUERY = `
+    query ($boardId: ID!, $columns: [ItemsPageByColumnValuesQuery!], $limit: Int) {
+      items_page_by_column_values(board_id: $boardId, columns: $columns, limit: $limit) {
+        items { id column_values(ids: ["${
+          USER_BOARD_USER_NAME_COLUMN_ID || "text1"
+        }"]) { id text } }
+        cursor
+      }
+    }
+  `;
+
+  type Data = {
+    items_page_by_column_values?: {
+      items?: Array<{
+        id: string;
+        column_values?: Array<{ id: string; text: string }>;
+      }>;
+      cursor?: string | null;
+    } | null;
+  };
+
+  try {
+    const data = await mondayRequest<
+      Data,
+      {
+        boardId: string;
+        columns: Array<{ column_id: string; column_values: string }>;
+        limit?: number;
+      }
+    >(QUERY, {
+      boardId: USER_BOARD_ID,
+      columns: [
+        { column_id: USER_BOARD_USER_ID_COLUMN_ID, column_values: userId },
+      ],
+      limit: 1,
+    });
+    const item = data?.items_page_by_column_values?.items?.[0];
+    const nameColId = USER_BOARD_USER_NAME_COLUMN_ID || "text1";
+    const name = item?.column_values?.find((c) => c.id === nameColId)?.text;
+    return name || null;
+  } catch {
+    return null;
+  }
+}
+
 // Create an item representing a claimed gift. Column mapping assumptions:
 // text  -> userId
 // text1 -> gift title
 export async function createClaimItem(
   boardId: string,
   userId: string,
-  giftTitle: string
+  giftTitle: string,
+  userName?: string
 ): Promise<CreateItemResponse> {
   const mutation = `
     mutation($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
@@ -250,13 +305,18 @@ export async function createClaimItem(
   // if environment variables for specific IDs are not provided.
   const userColumnId = config.CLAIMS_BOARD_USER_ID_COLUMN_ID || "text"; // user id / identity
   const giftTitleColumnId = config.CLAIMS_BOARD_GIFT_TITLE_COLUMN_ID || "text1"; // gift title
+  const userNameColumnId = config.CLAIMS_BOARD_USER_NAME_COLUMN_ID || "text2"; // optional user name column
 
   // Monday API expects column_values to be a JSON string where keys are column ids and
   // values are the raw value (for simple text columns just a string) or an object depending on type.
-  const columnValues = JSON.stringify({
+  const base: Record<string, string> = {
     [userColumnId]: userId,
     [giftTitleColumnId]: giftTitle,
-  });
+  };
+  if (userName) {
+    base[userNameColumnId] = userName;
+  }
+  const columnValues = JSON.stringify(base);
 
   return mondayRequest<
     CreateItemResponse,
