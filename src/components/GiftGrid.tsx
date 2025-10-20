@@ -192,6 +192,11 @@ export default function GiftGrid() {
                       {gift.description}
                     </p>
                   )}
+                  {gift.disclaimer && (
+                    <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      {gift.disclaimer}
+                    </p>
+                  )}
                   {/* stock indicators */}
                   <div className="mt-2 text-sm">
                     {isOut && (

@@ -3,6 +3,8 @@ export type Gift = {
   title: string;
   description?: string;
   image?: string; // relative to /public
+  // Optional note to show under the card (e.g., arrival info)
+  disclaimer?: string;
   // Total initial stock for this gift (configured once).
   stock?: number;
   // Computed server-side: how many units remain (stock - claimed). Not stored persistently here.
@@ -15,72 +17,87 @@ export const gifts: Gift[] = [
     id: "eir-gps-tag",
     title: "אייר - תג GPS",
     image: "/air-tag.png",
-    stock: 383,
+    // new stock
+    stock: 200,
   },
   {
     id: "thermal-cup",
     title: "כוס תרמית",
     image: "/כוס-תרמית.png",
-    stock: 143,
+    // new stock
+    stock: 1500,
+  },
+  // New gift: Laptop work tray (arrives later this semester)
+  {
+    id: "laptop-work-tray",
+    title: "מגש עבודה למחשב",
+    image: "/gift-placeholder.jpg",
+    stock: 500,
+    disclaimer: "המוצר יגיע בהמשך הסמסטר. ניתן להגיע לקחת מהאגודה.",
   },
   {
     id: "laptop-stand",
     title: "מעמד למחשב נייד",
     image: "/מעמד-למחשב.png",
-    stock: 474,
+    // new stock
+    stock: 350,
   },
   {
     id: "gray-cooler-6l",
     title: "צידנית יד אפורה 6 ל' דופן כפולה",
     image: "/צידנית-יד-6.jpg",
-    stock: 190,
+    // new stock
+    stock: 1500,
   },
   {
     id: "pp-lunchbox-with-cutlery",
-    title: "קופסאות אוכל עם סכום חומר PP",
+    title: "קופסאות אוכל",
     image: "/קופסת-אוכל.png",
-    stock: 334,
+    // new stock
+    stock: 250,
   },
-  {
-    id: "white-lunchbox-with-cutlery",
-    title: "קופסאת אוכל לבנה עם סכום",
-    image: "/קופסת-אוכל-לבנה.png",
-    stock: 1469,
-  },
+
   {
     id: "medium-training-bag-bw-28l",
     title: "תיק אימון בינוני שחור לבן 28 ל'",
     image: "/תיק-אימון-שחור.png",
-    stock: 105,
+    // new stock
+    stock: 50,
   },
   {
     id: "large-training-bag-gray-shoes-32l",
     title: "תיק אימון גדול אפור עם תא לנעליים 32 ל'",
     image: "/תיק-אימון-אפור.png",
-    stock: 121,
+    // new stock
+    stock: 60,
   },
   {
     id: "gray-backpack",
     title: "תיק גב אפור",
     image: "/תיק-גב-אפור.png",
-    stock: 301,
+    // new stock
+    stock: 200,
   },
   {
     id: "blue-backpack",
     title: "תיק גב כחול",
     image: "/תיק-גב-כחול.png",
-    stock: 430,
+    // new stock
+    stock: 300,
   },
   {
     id: "black-backpack",
     title: "תיק גב שחור",
     image: "/תיק-גב-שחור.png",
-    stock: 260,
+    // new stock
+    stock: 200,
   },
+  // New gift: Sports bag (arrives later this semester)
   {
-    id: "fleece-blanket",
-    title: "שמיכת פליז",
+    id: "sports-bag",
+    title: "תיק ספורט",
     image: "/gift-placeholder.jpg",
-    stock: 600,
+    stock: 1500,
+    disclaimer: "המוצר יגיע בהמשך הסמסטר. ניתן להגיע לקחת מהאגודה.",
   },
 ];

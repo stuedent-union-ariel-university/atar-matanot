@@ -97,9 +97,14 @@ type Gift = {
   title: string;
   description?: string;
   image?: string; // relative path under /public
-  remaining?: number; // עתידי: ספירת מלאי
+  disclaimer?: string; // טקסט הערת אזהרה קצר מתחת לכרטיס
+  stock?: number; // מלאי מוגדר (בשילוב לוח מלאי ב‑Monday)
+  remaining?: number; // מחושב בצד שרת לפי לוח מלאי או טבלת בחירות
 };
 ```
+
+סנכרון מלאי ל‑Monday: `pnpm upload:gifts` יעדכן/יצור פריטים בלוח המלאי לפי `src/lib/gifts.ts`.
+הצהרות מיוחדות (כגון "יגיע בהמשך הסמסטר") מוצגות תחת הכרטיס אם שדה `disclaimer` קיים.
 
 ## 🚀 הרצה מקומית
 
