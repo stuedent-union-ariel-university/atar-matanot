@@ -144,7 +144,6 @@ export default function GiftGrid() {
               const selected = gift.id === selectedGiftId;
               const remaining = gift.remaining ?? gift.stock ?? 0;
               const isOut = remaining <= 0;
-              const isLow = !isOut && remaining <= 50;
               return (
                 <button
                   key={gift.id}

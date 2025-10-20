@@ -69,7 +69,6 @@ export async function mondayRequestWithRetry<
   };
 
   let attempt = 0;
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     attempt++;
     const response = await fetch(config.MONDAY_API_URL, {
@@ -524,7 +523,7 @@ export async function decrementInventoryForGiftId(
     });
     const after1 = await getCurrentStockForGiftId(giftId);
     if (after1 === next) return;
-  } catch (e) {
+  } catch {
     // proceed to next attempt
   }
 
@@ -539,7 +538,7 @@ export async function decrementInventoryForGiftId(
     await mondayRequest(mutation2, { boardId, itemId, columnValues });
     const after2 = await getCurrentStockForGiftId(giftId);
     if (after2 === next) return;
-  } catch (e) {
+  } catch {
     // proceed to next attempt
   }
 
@@ -560,7 +559,7 @@ export async function decrementInventoryForGiftId(
     });
     const after3 = await getCurrentStockForGiftId(giftId);
     if (after3 === next) return;
-  } catch (e) {
+  } catch {
     // fallthrough
   }
 
