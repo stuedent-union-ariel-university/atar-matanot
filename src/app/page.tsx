@@ -22,10 +22,10 @@ export default function Home({
         <section className="text-center mb-12 md:mb-16 relative">
           <div className="mx-auto max-w-3xl">
             <h1 className="fancy-underline neon-text text-4xl md:text-5xl font-bold mb-5 leading-tight">
-              בחרו את המתנה שלכם
+              בחר/י את המתנה שלך
             </h1>
             <p className="max-w-2xl mx-auto text-base md:text-lg text-slate-600 leading-relaxed">
-              לחצו על המתנה שברצונכם לבחור. כל מתנה ניתנת לבחירה פעם אחת בלבד.
+              לחץ/י על המתנה שברצונך לבחור. כל מתנה ניתנת לבחירה פעם אחת בלבד.
               אנחנו משתמשים באימות כדי להבטיח הוגנות ושקיפות.
             </p>
           </div>
