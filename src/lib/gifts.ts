@@ -29,7 +29,7 @@ export const gifts: Gift[] = [
   {
     id: "laptop-work-tray",
     title: "מגש עבודה למחשב",
-    image: "/gift-placeholder.jpg",
+    image: "/מגש-לעבודה-למחשב.png",
     stock: 450, // 0 (Excel) + 500 * 0.9
     disclaimer: "המוצר יגיע בהמשך הסמסטר. ניתן להגיע לקחת מהאגודה.",
   },
