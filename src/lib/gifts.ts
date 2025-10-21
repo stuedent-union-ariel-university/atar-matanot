@@ -17,87 +17,87 @@ export const gifts: Gift[] = [
     id: "eir-gps-tag",
     title: "אייר - תג GPS",
     image: "/air-tag.png",
-    // new stock
-    stock: 200,
+    stock: 297, // Excel 10% off
   },
   {
     id: "thermal-cup",
     title: "כוס תרמית",
     image: "/כוס-תרמית.png",
-    // new stock
-    stock: 1500,
+    stock: 1463, // 113 (Excel 10% off) + 1500 * 0.9
   },
   // New gift: Laptop work tray (arrives later this semester)
   {
     id: "laptop-work-tray",
     title: "מגש עבודה למחשב",
     image: "/gift-placeholder.jpg",
-    stock: 500,
+    stock: 450, // 0 (Excel) + 500 * 0.9
     disclaimer: "המוצר יגיע בהמשך הסמסטר. ניתן להגיע לקחת מהאגודה.",
   },
   {
     id: "laptop-stand",
     title: "מעמד למחשב נייד",
     image: "/מעמד-למחשב.png",
-    // new stock
-    stock: 350,
+    stock: 383, // Excel 10% off (382.5 -> 383)
   },
   {
     id: "gray-cooler-6l",
     title: "צידנית יד אפורה 6 ל' דופן כפולה",
     image: "/צידנית-יד-6.png",
-    // new stock
-    stock: 1500,
+    stock: 1521, // 171 (Excel 10% off) + 1500 * 0.9
   },
+
+  // Lunchboxes – both SKUs from the Excel:
   {
     id: "pp-lunchbox-with-cutlery",
     title: "קופסאות אוכל",
+    description: "עם סכום חומר PP",
     image: "/קופסת-אוכל.png",
-    // new stock
-    stock: 250,
+    stock: 292, // Excel 10% off (291.6 -> 292)
+  },
+  {
+    id: "white-lunchbox-with-cutlery",
+    title: "קופסת אוכל לבנה עם סכום",
+    image: "/קופסת-אוכל-לבנה.png",
+    stock: 1296, // Excel 10% off
   },
 
   {
     id: "medium-training-bag-bw-28l",
     title: "תיק אימון בינוני שחור לבן 28 ל'",
     image: "/תיק-אימון-שחור.png",
-    // new stock
-    stock: 50,
+    stock: 81, // Excel 10% off
   },
   {
     id: "large-training-bag-gray-shoes-32l",
     title: "תיק אימון גדול אפור עם תא לנעליים 32 ל'",
     image: "/תיק-אימון-אפור.png",
-    // new stock
-    stock: 60,
+    stock: 108, // Excel 10% off
   },
   {
     id: "gray-backpack",
     title: "תיק גב אפור",
     image: "/תיק-גב-אפור.png",
-    // new stock
-    stock: 200,
+    stock: 270, // Excel 10% off
   },
   {
     id: "blue-backpack",
     title: "תיק גב כחול",
     image: "/תיק-גב-כחול.png",
-    // new stock
-    stock: 300,
+    stock: 360, // Excel 10% off
   },
   {
     id: "black-backpack",
     title: "תיק גב שחור",
     image: "/תיק-גב-שחור.png",
-    // new stock
-    stock: 200,
+    stock: 234, // Excel 10% off
   },
+
   // New gift: Sports bag (arrives later this semester)
   {
     id: "sports-bag",
     title: "תיק ספורט",
     image: "/תיק-ספורט.png",
-    stock: 1500,
+    stock: 1350, // 0 (Excel) + 1500 * 0.9
     disclaimer: "המוצר יגיע בהמשך הסמסטר. ניתן להגיע לקחת מהאגודה.",
   },
 ];
