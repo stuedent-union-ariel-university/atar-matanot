@@ -171,13 +171,13 @@ export default function GiftGrid() {
                     </span>
                   )}
                   {gift.image && (
-                    <div className="w-full h-44 relative mb-4 rounded-lg overflow-hidden">
+                    <div className="w-full relative mb-4 rounded-lg overflow-hidden bg-white/70 aspect-[4/3]">
                       <Image
                         src={gift.image}
                         alt={gift.title}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className={`object-cover opacity-95 group-hover:opacity-100 transition-transform duration-300 group-hover:scale-[1.02] ${
+                        className={`object-contain object-center opacity-95 group-hover:opacity-100 transition-transform duration-300 group-hover:scale-[1.02] ${
                           isOut ? "grayscale" : ""
                         }`}
                         priority={false}
