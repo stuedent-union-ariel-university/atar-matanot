@@ -2,11 +2,20 @@
 
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
+import { redirect } from "next/navigation";
 
 // Dynamically import GiftGrid with ssr: false
 const GiftGrid = dynamic(() => import("@/components/GiftGrid"));
 
-export default function Home() {
+export default function Home({
+  searchParams,
+}: {
+  searchParams?: { userId?: string };
+}) {
+  // If no userId provided in the URL, redirect to login page
+  if (!searchParams?.userId) {
+    redirect("/login");
+  }
   return (
     <div className="font-sans min-h-screen px-5 md:px-10 pb-20 pt-10">
       <main className="max-w-6xl mx-auto">
