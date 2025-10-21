@@ -45,7 +45,7 @@ export const gifts: Gift[] = [
   {
     id: "gray-cooler-6l",
     title: "צידנית יד אפורה 6 ל' דופן כפולה",
-    image: "/צידנית-יד-6.jpg",
+    image: "/צידנית-יד-6.png",
     // new stock
     stock: 1500,
   },
@@ -96,7 +96,7 @@ export const gifts: Gift[] = [
   {
     id: "sports-bag",
     title: "תיק ספורט",
-    image: "/gift-placeholder.jpg",
+    image: "/תיק-ספורט.png",
     stock: 1500,
     disclaimer: "המוצר יגיע בהמשך הסמסטר. ניתן להגיע לקחת מהאגודה.",
   },
