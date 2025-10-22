@@ -7,13 +7,15 @@ import { redirect } from "next/navigation";
 // Dynamically import GiftGrid with ssr: false
 const GiftGrid = dynamic(() => import("@/components/GiftGrid"));
 
-export default function Home({
+export default async function Home({
   searchParams,
 }: {
-  searchParams?: { userId?: string };
+  // In Next.js 15, searchParams is async in Server Components
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const params = await searchParams;
   // If no userId provided in the URL, redirect to login page
-  if (!searchParams?.userId) {
+  if (!params?.userId) {
     redirect("/login");
   }
   return (
@@ -32,14 +34,14 @@ export default function Home({
 
           {/* soft gradient halo */}
           <div
-            className="pointer-events-none absolute -inset-x-10 -bottom-6 top-1/2 bg-gradient-to-b from-transparent via-[#3B7FC4]/10 to-transparent blur-3xl"
+            className="pointer-events-none absolute -inset-x-10 -bottom-6 top-1/2 bg-linear-to-b from-transparent via-[#3B7FC4]/10 to-transparent blur-3xl"
             aria-hidden="true"
           />
         </section>
 
         <div className="relative">
           <div
-            className="absolute -inset-6 rounded-[28px] bg-gradient-to-br from-[#3B7FC4]/20 via-transparent to-[#3B7FC4]/5 blur-2xl pointer-events-none"
+            className="absolute -inset-6 rounded-[28px] bg-linear-to-br from-[#3B7FC4]/20 via-transparent to-[#3B7FC4]/5 blur-2xl pointer-events-none"
             aria-hidden="true"
           />
           <div className="relative glass glass-border p-6 md:p-10">
