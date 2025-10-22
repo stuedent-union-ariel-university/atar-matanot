@@ -76,7 +76,7 @@ export const gifts: Gift[] = [
   },
   {
     id: "large-training-bag-gray-shoes-32l",
-    title: "תיק אימון גדול אפור עם תא לנעליים 32 ל'",
+    title: "תיק אימון גדול עם תא לנעליים 32 ל'",
     image: "/תיק-אימון-אפור.png",
     stock: 90, // Excel 10% off
   },
