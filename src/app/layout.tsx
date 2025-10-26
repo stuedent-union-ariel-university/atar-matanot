@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
 import "./globals.css";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,7 +53,6 @@ export default function RootLayout({
           />
         </div>
         <div className="relative z-10">{children}</div>
-        <SpeedInsights />
       </body>
     </html>
   );
