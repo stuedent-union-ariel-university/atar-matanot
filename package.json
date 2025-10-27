@@ -14,7 +14,6 @@
     "clean:users:delete": "tsx scripts/remove-users-from-monday.ts --yes --delete"
   },
   "dependencies": {
-    "@vercel/speed-insights": "^1.2.0",
     "next": "15.5.4",
     "react": "19.1.0",
     "react-confetti": "^6.4.0",
@@ -33,7 +32,6 @@
     "tailwindcss": "^4.1.16",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^2.1.9"
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }
