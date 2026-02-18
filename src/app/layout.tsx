@@ -37,11 +37,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased relative overflow-x-hidden noise-layer`}
       >
+        <div className="sticky top-0 z-50 bg-[#3B7FC4] text-white py-2.5 px-4 shadow-md">
+          <div className="max-w-7xl mx-auto text-center font-bold text-sm md:text-base">
+            אפשר להגיש בקשה למתנה עד ל3/1/26
+          </div>
+        </div>
         <div
           className="absolute inset-0 bg-grid pointer-events-none"
           aria-hidden="true"
         />
-        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+        <div className="absolute top-14 right-3 sm:top-16 sm:right-4 z-10">
           <Image
             src="/לוגו.png"
             alt="לוגו אגודת הסטודנטים"
