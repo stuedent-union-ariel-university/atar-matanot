@@ -33,7 +33,7 @@ export default function GiftGrid() {
       setError(null);
       try {
         const response = await fetch(
-          `${config.API_CHECK_GIFT_URL}?userId=${userId}`
+          `${config.API_CHECK_GIFT_URL}?userId=${userId}`,
         );
         const data = await response.json();
 
@@ -98,7 +98,7 @@ export default function GiftGrid() {
       router.push(`/thank-you?gift=${giftTitle}`);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "אירעה שגיאה בשמירת הבחירה"
+        err instanceof Error ? err.message : "אירעה שגיאה בשמירת הבחירה",
       );
     } finally {
       setSubmitting(false);
@@ -155,8 +155,8 @@ export default function GiftGrid() {
                     isOut
                       ? "border-rose-300 bg-rose-50/70 cursor-not-allowed opacity-70"
                       : selected
-                      ? "border-[#3B7FC4]/50 bg-[#3B7FC4]/10"
-                      : "border-black/10 bg-white/60"
+                        ? "border-[#3B7FC4]/50 bg-[#3B7FC4]/10"
+                        : "border-black/10 bg-white/60"
                   }`}
                   dir="rtl"
                 >
@@ -190,11 +190,6 @@ export default function GiftGrid() {
                   {gift.description && (
                     <p className="text-sm text-slate-600 leading-relaxed">
                       {gift.description}
-                    </p>
-                  )}
-                  {gift.disclaimer && (
-                    <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                      {gift.disclaimer}
                     </p>
                   )}
                   {/* stock indicators */}
@@ -236,8 +231,8 @@ export default function GiftGrid() {
                 {submitting
                   ? "שולח..."
                   : selectedGiftId
-                  ? "שלח בחירה"
-                  : "בחר מתנה"}
+                    ? "שלח בחירה"
+                    : "בחר מתנה"}
               </span>
             </button>
           </div>

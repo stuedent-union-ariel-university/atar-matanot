@@ -6,13 +6,10 @@ export const config = {
   API_GIFTS_URL: "/api/gifts",
   MONDAY_API_KEY: process.env.MONDAY_API_KEY,
   USER_BOARD_ID: process.env.MONDAY_USER_BOARD_ID,
-  // An additional board to cross-verify user eligibility (e.g., form responders)
-  FORM_BOARD_ID: process.env.MONDAY_FORM_BOARD_ID,
   CLAIMS_BOARD_ID: process.env.MONDAY_CLAIMS_BOARD_ID,
   USER_BOARD_USER_ID_COLUMN_ID: process.env.MONDAY_USER_BOARD_USER_ID_COLUMN_ID,
   USER_BOARD_USER_NAME_COLUMN_ID:
     process.env.MONDAY_USER_BOARD_USER_NAME_COLUMN_ID,
-  FORM_BOARD_USER_ID_COLUMN_ID: process.env.MONDAY_FORM_BOARD_USER_ID_COLUMN_ID,
   CLAIMS_BOARD_USER_ID_COLUMN_ID:
     process.env.MONDAY_CLAIMS_BOARD_USER_ID_COLUMN_ID,
   CLAIMS_BOARD_GIFT_TITLE_COLUMN_ID:

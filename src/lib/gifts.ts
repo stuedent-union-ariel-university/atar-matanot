@@ -3,8 +3,6 @@ export type Gift = {
   title: string;
   description?: string;
   image?: string; // relative to /public
-  // Optional note to show under the card (e.g., arrival info)
-  disclaimer?: string;
   // Total initial stock for this gift (configured once).
   stock?: number;
   // Computed server-side: how many units remain (stock - claimed). Not stored persistently here.
@@ -38,7 +36,6 @@ export const gifts: Gift[] = [
     title: "מגש עבודה למחשב",
     image: "/מגש-עבודה-למחשב.png",
     stock: 450, // 0 (Excel) + 500 * 0.9
-    disclaimer: "המוצר יגיע בהמשך הסמסטר. ניתן להגיע לקחת מהאגודה.",
   },
   {
     id: "laptop-stand",
@@ -111,7 +108,6 @@ export const gifts: Gift[] = [
     title: "תיק ספורט",
     image: "/תיק-ספורט.png",
     stock: 1350, // 0 (Excel) + 1500 * 0.9
-    disclaimer: "המוצר יגיע בהמשך הסמסטר. ניתן להגיע לקחת מהאגודה.",
   },
   {
     id: "mat",

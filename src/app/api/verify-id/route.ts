@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { findUserInBoardByColumnValues } from "@/lib/monday";
 
-// Verify user ID by checking it appears in BOTH the user board and the form board,
+// Verify user ID by checking it appears in the user board,
 // and has NOT appeared yet in the claims board.
 export async function GET(request: Request) {
   try {
@@ -10,8 +10,6 @@ export async function GET(request: Request) {
       MONDAY_API_KEY,
       USER_BOARD_ID,
       USER_BOARD_USER_ID_COLUMN_ID,
-      FORM_BOARD_ID,
-      FORM_BOARD_USER_ID_COLUMN_ID,
       CLAIMS_BOARD_ID,
       CLAIMS_BOARD_USER_ID_COLUMN_ID,
     } = config;
@@ -21,9 +19,6 @@ export async function GET(request: Request) {
     if (!USER_BOARD_ID) missing.push("USER_BOARD_ID");
     if (!USER_BOARD_USER_ID_COLUMN_ID)
       missing.push("USER_BOARD_USER_ID_COLUMN_ID");
-    if (!FORM_BOARD_ID) missing.push("FORM_BOARD_ID");
-    if (!FORM_BOARD_USER_ID_COLUMN_ID)
-      missing.push("FORM_BOARD_USER_ID_COLUMN_ID");
     if (!CLAIMS_BOARD_ID) missing.push("CLAIMS_BOARD_ID");
     if (!CLAIMS_BOARD_USER_ID_COLUMN_ID)
       missing.push("CLAIMS_BOARD_USER_ID_COLUMN_ID");
@@ -38,8 +33,6 @@ export async function GET(request: Request) {
     // Safe non-null locals after validation above
     const userBoardId = USER_BOARD_ID!;
     const userBoardUserIdColumnId = USER_BOARD_USER_ID_COLUMN_ID!;
-    const formBoardId = FORM_BOARD_ID!;
-    const formBoardUserIdColumnId = FORM_BOARD_USER_ID_COLUMN_ID!;
     const claimsBoardId = CLAIMS_BOARD_ID!;
     const claimsBoardUserIdColumnId = CLAIMS_BOARD_USER_ID_COLUMN_ID!;
 
@@ -69,23 +62,6 @@ export async function GET(request: Request) {
       throw err;
     }
 
-    let inFormBoard = false;
-    try {
-      inFormBoard = await findUserInBoardByColumnValues(
-        formBoardId,
-        formBoardUserIdColumnId,
-        userId
-      );
-      console.info("[verify-id] form board check", {
-        boardId: formBoardId,
-        columnId: formBoardUserIdColumnId,
-        result: inFormBoard,
-      });
-    } catch (err) {
-      console.error("[verify-id] form board check failed", err);
-      throw err;
-    }
-
     let alreadyClaimed = false;
     try {
       alreadyClaimed = await findUserInBoardByColumnValues(
@@ -106,12 +82,6 @@ export async function GET(request: Request) {
     if (!inUserBoard) {
       return NextResponse.json(
         { error: "לא נמצאת/ת ברשימת הזכאים" },
-        { status: 403 }
-      );
-    }
-    if (!inFormBoard) {
-      return NextResponse.json(
-        { error: "לא נמצאה תשובה בסקר האגודה" },
         { status: 403 }
       );
     }
