@@ -6,6 +6,15 @@ import { findUserInBoardByColumnValues } from "@/lib/monday";
 // and has NOT appeared yet in the claims board.
 export async function GET(request: Request) {
   try {
+    // Check if the submission deadline has passed
+    const deadline = new Date(config.SUBMISSION_DEADLINE);
+    if (new Date() > deadline) {
+      return NextResponse.json(
+        { error: "מועד בחירת המתנות הסתיים" },
+        { status: 403 },
+      );
+    }
+
     const {
       MONDAY_API_KEY,
       USER_BOARD_ID,
@@ -26,7 +35,7 @@ export async function GET(request: Request) {
       console.error("[verify-id] Missing configuration:", missing);
       return NextResponse.json(
         { error: "Server configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -50,7 +59,7 @@ export async function GET(request: Request) {
       inUserBoard = await findUserInBoardByColumnValues(
         userBoardId,
         userBoardUserIdColumnId,
-        userId
+        userId,
       );
       console.info("[verify-id] user board check", {
         boardId: userBoardId,
@@ -67,7 +76,7 @@ export async function GET(request: Request) {
       alreadyClaimed = await findUserInBoardByColumnValues(
         claimsBoardId,
         claimsBoardUserIdColumnId,
-        userId
+        userId,
       );
       console.info("[verify-id] claims board check", {
         boardId: claimsBoardId,
@@ -82,7 +91,7 @@ export async function GET(request: Request) {
     if (!inUserBoard) {
       return NextResponse.json(
         { error: "לא נמצאת/ת ברשימת הזכאים" },
-        { status: 403 }
+        { status: 403 },
       );
     }
     if (alreadyClaimed) {
@@ -94,7 +103,7 @@ export async function GET(request: Request) {
     console.error("[verify-id] unhandled error", e);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

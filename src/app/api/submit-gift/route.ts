@@ -14,10 +14,19 @@ import { gifts } from "@/lib/gifts";
 
 export async function POST(request: Request) {
   try {
+    // Check if the submission deadline has passed
+    const deadline = new Date(config.SUBMISSION_DEADLINE);
+    if (new Date() > deadline) {
+      return NextResponse.json(
+        { error: "מועד בחירת המתנות הסתיים ב-1 במרץ 2026" },
+        { status: 403 },
+      );
+    }
+
     if (!config.MONDAY_API_KEY || !config.CLAIMS_BOARD_ID) {
       return NextResponse.json(
         { error: "Server configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -27,7 +36,7 @@ export async function POST(request: Request) {
     if (!userId || !giftId) {
       return NextResponse.json(
         { error: "מספר זהות ומזהה מתנה נדרשים" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,14 +77,14 @@ export async function POST(request: Request) {
     const items = checkResult?.boards?.[0]?.items_page?.items || [];
     const existingClaim = items.find((item: any) =>
       item.column_values?.some(
-        (col: any) => col.id === userColumnId && col.text === userId
-      )
+        (col: any) => col.id === userColumnId && col.text === userId,
+      ),
     );
 
     if (existingClaim) {
       return NextResponse.json(
         { error: "כבר בחרת מתנה בעבר" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -88,7 +97,7 @@ export async function POST(request: Request) {
       if (current == null || current <= 0) {
         return NextResponse.json(
           { error: "המתנה אזלה מהמלאי" },
-          { status: 409 }
+          { status: 409 },
         );
       }
     } else {
@@ -100,7 +109,7 @@ export async function POST(request: Request) {
       if (remaining <= 0) {
         return NextResponse.json(
           { error: "המתנה אזלה מהמלאי" },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -116,7 +125,7 @@ export async function POST(request: Request) {
       } catch (e) {
         return NextResponse.json(
           { error: (e as Error).message || "המתנה אזלה מהמלאי" },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -133,7 +142,7 @@ export async function POST(request: Request) {
         config.CLAIMS_BOARD_ID,
         userId,
         gift.title,
-        userName ?? undefined
+        userName ?? undefined,
       );
     } catch (e) {
       // Compensation: if inventory was decremented, add it back
@@ -154,7 +163,7 @@ export async function POST(request: Request) {
     console.error("Error submitting gift:", error);
     return NextResponse.json(
       { error: "אירעה שגיאה בשמירת הבחירה" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

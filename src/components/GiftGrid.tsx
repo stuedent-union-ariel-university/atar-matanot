@@ -18,6 +18,8 @@ export default function GiftGrid() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const isAfterDeadline = new Date() > new Date(config.SUBMISSION_DEADLINE);
+
   useEffect(() => {
     const userIdFromParams = searchParams.get("userId");
     if (userIdFromParams && userIdFromParams !== userId) {
@@ -125,6 +127,15 @@ export default function GiftGrid() {
     return (
       <div className="alert alert-error text-rose-800 mb-6">
         מספר זהות לא נמצא בקישור
+      </div>
+    );
+  }
+
+  if (isAfterDeadline) {
+    return (
+      <div className="alert alert-error text-rose-800 mb-6 py-8" dir="rtl">
+        <h2 className="text-xl font-bold mb-2">מועד בחירת המתנות הסתיים</h2>
+        <p>ניתן היה לבחור מתנה עד ל-1 במרץ 2026 בחצות.</p>
       </div>
     );
   }

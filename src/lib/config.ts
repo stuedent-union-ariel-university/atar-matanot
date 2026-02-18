@@ -21,4 +21,6 @@ export const config = {
   INVENTORY_BOARD_ID: process.env.MONDAY_INVENTORY_BOARD_ID,
   INVENTORY_GIFT_ID_COLUMN_ID: process.env.MONDAY_INVENTORY_GIFT_ID_COLUMN_ID, // typically a Text column
   INVENTORY_STOCK_COLUMN_ID: process.env.MONDAY_INVENTORY_STOCK_COLUMN_ID, // typically a Numbers column
+  // March 1st, 2026, at midnight (Israel time)
+  SUBMISSION_DEADLINE: "2026-03-01T00:00:00+02:00",
 };

@@ -4,6 +4,15 @@ import { findUserInBoardByColumnValues } from "@/lib/monday";
 
 export async function GET(request: Request) {
   try {
+    // Check if the submission deadline has passed
+    const deadline = new Date(config.SUBMISSION_DEADLINE);
+    if (new Date() > deadline) {
+      return NextResponse.json(
+        { error: "מועד בחירת המתנות הסתיים" },
+        { status: 403 },
+      );
+    }
+
     const {
       MONDAY_API_KEY,
       USER_BOARD_ID,
@@ -20,7 +29,7 @@ export async function GET(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Server configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
     const url = new URL(request.url);
@@ -32,18 +41,18 @@ export async function GET(request: Request) {
     const eligible = await findUserInBoardByColumnValues(
       USER_BOARD_ID,
       USER_BOARD_USER_ID_COLUMN_ID,
-      userId
+      userId,
     );
     if (!eligible)
       return NextResponse.json(
         { error: "נראה שאתה לא ברשימת משלמי דמי הרווחה" },
-        { status: 403 }
+        { status: 403 },
       );
 
     const claimed = await findUserInBoardByColumnValues(
       CLAIMS_BOARD_ID,
       CLAIMS_BOARD_USER_ID_COLUMN_ID,
-      userId
+      userId,
     );
     if (claimed)
       return NextResponse.json({ error: "כבר בחרת מתנה" }, { status: 400 });
@@ -52,7 +61,7 @@ export async function GET(request: Request) {
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
