@@ -140,6 +140,10 @@ export default function GiftGrid() {
     );
   }
 
+  const inStockGifts = gifts.filter(
+    (gift) => (gift.remaining ?? gift.stock ?? 0) > 0,
+  );
+
   return (
     <div className="w-full max-w-5xl mx-auto text-center" dir="rtl">
       {isEligible && (
@@ -151,7 +155,7 @@ export default function GiftGrid() {
       {isEligible && (
         <>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {gifts.map((gift) => {
+            {inStockGifts.map((gift) => {
               const selected = gift.id === selectedGiftId;
               const remaining = gift.remaining ?? gift.stock ?? 0;
               const isOut = remaining <= 0;
@@ -223,7 +227,7 @@ export default function GiftGrid() {
                 </button>
               );
             })}
-            {gifts.length === 0 && (
+            {inStockGifts.length === 0 && (
               <div className="col-span-full text-slate-500 text-sm">
                 לא נמצאו מתנות כרגע.
               </div>
