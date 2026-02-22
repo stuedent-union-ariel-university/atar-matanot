@@ -14,7 +14,7 @@
     "clean:users:delete": "tsx scripts/remove-users-from-monday.ts --yes --delete"
   },
   "dependencies": {
-    "next": "15.5.7",
+    "next": "15.5.9",
     "react": "19.2.1",
     "react-confetti": "^6.4.0",
     "react-dom": "19.2.1",
@@ -22,14 +22,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
-    "@tailwindcss/postcss": "^4.1.17",
-    "@types/node": "^20.19.25",
-    "@types/react": "^19.2.7",
+    "@tailwindcss/postcss": "^4.2.0",
+    "@types/node": "^20.19.33",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "dotenv": "^17.2.3",
-    "eslint": "^9.39.1",
+    "dotenv": "^17.3.1",
+    "eslint": "^9.39.3",
     "eslint-config-next": "15.5.4",
-    "tailwindcss": "^4.1.17",
+    "tailwindcss": "^4.2.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^5.1.4"
