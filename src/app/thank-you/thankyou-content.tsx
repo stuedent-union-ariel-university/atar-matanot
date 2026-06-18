@@ -35,9 +35,9 @@ export function ThankYouContent() {
         }`}
       >
         <p className="text-xl md:text-2xl font-semibold mb-4">
-          הבחירה שלך ב:{" "}
-          <span className="text-[#3B7FC4]">{decodeURIComponent(gift)}</span>{" "}
-          נשמרה בהצלחה.
+          {/* searchParams.get() already returns the decoded value */}
+          הבחירה שלך ב: <span className="text-[#3B7FC4]">{gift}</span> נשמרה
+          בהצלחה.
         </p>
         <p className="text-slate-600 leading-relaxed max-w-prose mx-auto">
           המתנה תטופל ותימסר בהתאם להנחיות. אין צורך לבצע פעולה נוספת.

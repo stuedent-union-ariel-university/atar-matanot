@@ -24,3 +24,9 @@ export const config = {
   // March 1st, 2026, at midnight (Israel time)
   SUBMISSION_DEADLINE: "2026-03-01T00:00:00+02:00",
 };
+
+export function isSubmissionClosed(): boolean {
+  // Deadline disabled for now. To re-enable, restore the line below.
+  // return new Date() > new Date(config.SUBMISSION_DEADLINE);
+  return false;
+}

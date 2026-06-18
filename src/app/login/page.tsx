@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { config } from "@/lib/config";
+import { config, isSubmissionClosed } from "@/lib/config";
 
 export default function LoginPage() {
   const [userId, setUserId] = useState("");
@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const isAfterDeadline = new Date() > new Date(config.SUBMISSION_DEADLINE);
+  const isAfterDeadline = isSubmissionClosed();
 
   const validateId = (id: string) => /^[0-9]{7,10}$/.test(id.trim());
 
@@ -50,7 +50,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="font-sans min-h-screen px-5 md:px-10 pb-20 pt-10" dir="rtl">
+    <div className="font-sans min-h-screen px-5 md:px-10 pb-20 pt-20" dir="rtl">
       <main className="max-w-md mx-auto">
         <section className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">אימות זהות</h1>
@@ -88,6 +88,7 @@ export default function LoginPage() {
                 id="userId"
                 inputMode="numeric"
                 pattern="[0-9]*"
+                maxLength={10}
                 autoComplete="one-time-code"
                 className="w-full rounded-lg border px-4 py-2 text-right"
                 placeholder="לדוגמה: 123456789"

@@ -1,12 +1,18 @@
-import { config } from "@/lib/config";
+import { config, isSubmissionClosed } from "@/lib/config";
 import { NextResponse } from "next/server";
 import { findUserInBoardByColumnValues } from "@/lib/monday";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   try {
+    const limited = checkRateLimit(request, "check-gift", {
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (limited) return limited;
+
     // Check if the submission deadline has passed
-    const deadline = new Date(config.SUBMISSION_DEADLINE);
-    if (new Date() > deadline) {
+    if (isSubmissionClosed()) {
       return NextResponse.json(
         { error: "מועד בחירת המתנות הסתיים" },
         { status: 403 },

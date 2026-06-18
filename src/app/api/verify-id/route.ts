@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
-import { config } from "@/lib/config";
+import { config, isSubmissionClosed } from "@/lib/config";
 import { findUserInBoardByColumnValues } from "@/lib/monday";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Verify user ID by checking it appears in the user board,
 // and has NOT appeared yet in the claims board.
 export async function GET(request: Request) {
   try {
+    // Tight limit: this endpoint reveals which IDs are eligible, so it is
+    // the main target for ID enumeration.
+    const limited = checkRateLimit(request, "verify-id", {
+      limit: 10,
+      windowMs: 60_000,
+    });
+    if (limited) return limited;
+
     // Check if the submission deadline has passed
-    const deadline = new Date(config.SUBMISSION_DEADLINE);
-    if (new Date() > deadline) {
+    if (isSubmissionClosed()) {
       return NextResponse.json(
         { error: "מועד בחירת המתנות הסתיים" },
         { status: 403 },

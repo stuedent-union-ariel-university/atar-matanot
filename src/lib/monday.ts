@@ -1,12 +1,14 @@
 import { config } from "./config";
 import type {
-  MondayColumnValue,
   MondayItem,
   MondayGraphQLError,
   ItemsPageQueryData,
   CreateItemResponse,
 } from "@/types/monday";
 import { gifts as baseGifts, type Gift } from "@/lib/gifts";
+
+// Abort requests that hang so API routes always respond in bounded time.
+const REQUEST_TIMEOUT_MS = 15_000;
 
 // Generic GraphQL request helper with typed response & variables
 export async function mondayRequest<
@@ -21,6 +23,7 @@ export async function mondayRequest<
     },
     body: JSON.stringify({ query, variables }),
     cache: "no-store",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const json = (await response.json()) as {
@@ -79,7 +82,7 @@ export async function mondayRequestWithRetry<
       },
       body: JSON.stringify({ query, variables }),
       cache: "no-store",
-      signal,
+      signal: signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
     // Handle HTTP errors
@@ -148,42 +151,6 @@ const ITEMS_PAGE_QUERY = `
   }
 `;
 
-export async function findUserInBoard(
-  boardId: string,
-  columnId: string,
-  userId: string,
-  pageSize = 500,
-  maxPages = 25
-): Promise<boolean> {
-  let cursor: string | null = null;
-  for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
-    const data: ItemsPageQueryData = await mondayRequest<ItemsPageQueryData>(
-      ITEMS_PAGE_QUERY,
-      {
-        boardId,
-        cursor,
-        limit: pageSize,
-        columnId: [columnId],
-      }
-    );
-    const firstBoard = Array.isArray(data.boards) ? data.boards[0] : undefined;
-    const page = firstBoard?.items_page;
-    const items: MondayItem[] = page?.items ?? [];
-    if (
-      items.some((item) =>
-        item.column_values?.some(
-          (columnValue: MondayColumnValue) => columnValue.text === userId
-        )
-      )
-    ) {
-      return true;
-    }
-    cursor = page?.cursor || null;
-    if (!cursor) break; // No more pages
-  }
-  return false;
-}
-
 // Use Monday's items_page_by_column_values for direct server-side filtering by column value.
 // This is more efficient than scanning pages client-side when you know the exact value to match.
 export async function findUserInBoardByColumnValues(
@@ -225,13 +192,6 @@ export async function findUserInBoardByColumnValues(
   return items.length > 0;
 }
 
-export async function mondayQueryRaw<
-  TData = unknown,
-  TVars extends Record<string, unknown> = Record<string, unknown>
->(query: string, variables?: TVars) {
-  return mondayRequest<TData, TVars>(query, variables);
-}
-
 // Fetch the user's display name from the user board given their ID
 export async function getUserNameById(userId: string): Promise<string | null> {
   const {
@@ -242,11 +202,9 @@ export async function getUserNameById(userId: string): Promise<string | null> {
   if (!USER_BOARD_ID || !USER_BOARD_USER_ID_COLUMN_ID) return null;
 
   const QUERY = `
-    query ($boardId: ID!, $columns: [ItemsPageByColumnValuesQuery!], $limit: Int) {
+    query ($boardId: ID!, $columns: [ItemsPageByColumnValuesQuery!], $limit: Int, $nameColumnId: [String!]) {
       items_page_by_column_values(board_id: $boardId, columns: $columns, limit: $limit) {
-        items { id column_values(ids: ["${
-          USER_BOARD_USER_NAME_COLUMN_ID || "text1"
-        }"]) { id text } }
+        items { id column_values(ids: $nameColumnId) { id text } }
         cursor
       }
     }
@@ -262,6 +220,7 @@ export async function getUserNameById(userId: string): Promise<string | null> {
     } | null;
   };
 
+  const nameColId = USER_BOARD_USER_NAME_COLUMN_ID || "text1";
   try {
     const data = await mondayRequest<
       Data,
@@ -269,6 +228,7 @@ export async function getUserNameById(userId: string): Promise<string | null> {
         boardId: string;
         columns: Array<{ column_id: string; column_values: string }>;
         limit?: number;
+        nameColumnId: string[];
       }
     >(QUERY, {
       boardId: USER_BOARD_ID,
@@ -276,9 +236,9 @@ export async function getUserNameById(userId: string): Promise<string | null> {
         { column_id: USER_BOARD_USER_ID_COLUMN_ID, column_values: userId },
       ],
       limit: 1,
+      nameColumnId: [nameColId],
     });
     const item = data?.items_page_by_column_values?.items?.[0];
-    const nameColId = USER_BOARD_USER_NAME_COLUMN_ID || "text1";
     const name = item?.column_values?.find((c) => c.id === nameColId)?.text;
     return name || null;
   } catch {
@@ -367,14 +327,19 @@ export async function countClaimsByGiftTitle(): Promise<
   return counts;
 }
 
+// True when all env vars needed for the live inventory board are present.
+export function isInventoryConfigured(): boolean {
+  return Boolean(
+    config.INVENTORY_BOARD_ID &&
+      config.INVENTORY_GIFT_ID_COLUMN_ID &&
+      config.INVENTORY_STOCK_COLUMN_ID
+  );
+}
+
 // Compute remaining quantities for each configured gift by subtracting claims.
 export async function getGiftsWithRemaining(): Promise<Gift[]> {
   // If an inventory board is configured, prefer using its live stock numbers
-  if (
-    config.INVENTORY_BOARD_ID &&
-    config.INVENTORY_GIFT_ID_COLUMN_ID &&
-    config.INVENTORY_STOCK_COLUMN_ID
-  ) {
+  if (isInventoryConfigured()) {
     const inventory = await getInventoryMap();
     return baseGifts.map((g) => {
       const stockStr = inventory.get(g.id);
@@ -453,45 +418,40 @@ async function findInventoryItemIdByGiftId(
   return null;
 }
 
-export async function getCurrentStockForGiftId(
-  giftId: string
-): Promise<number | null> {
-  if (
-    !config.INVENTORY_BOARD_ID ||
-    !config.INVENTORY_GIFT_ID_COLUMN_ID ||
-    !config.INVENTORY_STOCK_COLUMN_ID
-  )
-    return null;
-  const itemId = await findInventoryItemIdByGiftId(giftId);
-  if (!itemId) return null;
+// Fetch just the stock column value for a known inventory item id.
+async function getStockForItemId(itemId: string): Promise<number> {
   const stockCol = config.INVENTORY_STOCK_COLUMN_ID!;
-  // Fetch just the stock column value for this item
   const query = `
     query($ids:[ID!], $columnId:[String!]){
       items(ids:$ids){ id column_values(ids:$columnId){ id text } }
     }
   `;
-  const data = await mondayQueryRaw<{ items: MondayItem[] }>(query, {
+  const data = await mondayRequest<{ items: MondayItem[] }>(query, {
     ids: [itemId],
     columnId: [stockCol],
   });
-  const items: MondayItem[] = data?.items ?? [];
-  const stockText: string | undefined = items?.[0]?.column_values?.[0]?.text;
+  const stockText: string | undefined =
+    data?.items?.[0]?.column_values?.[0]?.text;
   // Be robust to thousand separators or other formatting returned by Monday
   const cleaned = (stockText ?? "").replace(/[^0-9.-]/g, "");
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
 
+export async function getCurrentStockForGiftId(
+  giftId: string
+): Promise<number | null> {
+  if (!isInventoryConfigured()) return null;
+  const itemId = await findInventoryItemIdByGiftId(giftId);
+  if (!itemId) return null;
+  return getStockForItemId(itemId);
+}
+
 // Atomically decrement stock for a gift by 1. Throws if no stock.
 export async function decrementInventoryForGiftId(
   giftId: string
 ): Promise<void> {
-  if (
-    !config.INVENTORY_BOARD_ID ||
-    !config.INVENTORY_GIFT_ID_COLUMN_ID ||
-    !config.INVENTORY_STOCK_COLUMN_ID
-  )
+  if (!isInventoryConfigured())
     throw new Error("Inventory board is not configured");
 
   const itemId = await findInventoryItemIdByGiftId(giftId);
@@ -501,8 +461,8 @@ export async function decrementInventoryForGiftId(
   const stockCol = config.INVENTORY_STOCK_COLUMN_ID!;
 
   // First read current stock directly to guard
-  const current = await getCurrentStockForGiftId(giftId);
-  if (current == null || current <= 0) {
+  const current = await getStockForItemId(itemId);
+  if (current <= 0) {
     throw new Error("המתנה אזלה מהמלאי");
   }
 
@@ -521,8 +481,7 @@ export async function decrementInventoryForGiftId(
       columnId: stockCol,
       value: String(next),
     });
-    const after1 = await getCurrentStockForGiftId(giftId);
-    if (after1 === next) return;
+    if ((await getStockForItemId(itemId)) === next) return;
   } catch {
     // proceed to next attempt
   }
@@ -536,8 +495,7 @@ export async function decrementInventoryForGiftId(
     `;
     const columnValues = JSON.stringify({ [stockCol]: String(next) });
     await mondayRequest(mutation2, { boardId, itemId, columnValues });
-    const after2 = await getCurrentStockForGiftId(giftId);
-    if (after2 === next) return;
+    if ((await getStockForItemId(itemId)) === next) return;
   } catch {
     // proceed to next attempt
   }
@@ -557,8 +515,7 @@ export async function decrementInventoryForGiftId(
       columnId: stockCol,
       value,
     });
-    const after3 = await getCurrentStockForGiftId(giftId);
-    if (after3 === next) return;
+    if ((await getStockForItemId(itemId)) === next) return;
   } catch {
     // fallthrough
   }
@@ -570,18 +527,13 @@ export async function decrementInventoryForGiftId(
 export async function incrementInventoryForGiftId(
   giftId: string
 ): Promise<void> {
-  if (
-    !config.INVENTORY_BOARD_ID ||
-    !config.INVENTORY_GIFT_ID_COLUMN_ID ||
-    !config.INVENTORY_STOCK_COLUMN_ID
-  )
-    return;
+  if (!isInventoryConfigured()) return;
   const itemId = await findInventoryItemIdByGiftId(giftId);
   if (!itemId) return;
   const boardId = config.INVENTORY_BOARD_ID!;
   const stockCol = config.INVENTORY_STOCK_COLUMN_ID!;
-  const current = await getCurrentStockForGiftId(giftId);
-  const next = (current ?? 0) + 1;
+  const current = await getStockForItemId(itemId);
+  const next = current + 1;
   const mutation = `
     mutation($boardId: ID!, $itemId: ID!, $columnId: String!, $value: String!) {
       change_simple_column_value(board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) { id }

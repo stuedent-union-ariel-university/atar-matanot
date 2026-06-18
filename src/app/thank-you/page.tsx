@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function ThankYouPage() {
   return (
-    <div className="font-sans min-h-screen px-5 md:px-10 pb-20 pt-16" dir="rtl">
+    <div className="font-sans min-h-screen px-5 md:px-10 pb-20 pt-24" dir="rtl">
       <main className="max-w-3xl mx-auto text-center">
         <Suspense fallback={<div className="spinner mx-auto mt-20" />}>
           <ThankYouContent />

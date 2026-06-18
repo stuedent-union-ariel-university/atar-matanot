@@ -1,11 +1,8 @@
 // src/app/page.tsx
 
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
-
-// Dynamically import GiftGrid with ssr: false
-const GiftGrid = dynamic(() => import("@/components/GiftGrid"));
+import GiftGrid from "@/components/GiftGrid";
 
 export default async function Home({
   searchParams,
@@ -19,7 +16,7 @@ export default async function Home({
     redirect("/login");
   }
   return (
-    <div className="font-sans min-h-screen px-5 md:px-10 pb-20 pt-10">
+    <div className="font-sans min-h-screen px-5 md:px-10 pb-20 pt-20">
       <main className="max-w-6xl mx-auto">
         <section className="text-center mb-12 md:mb-16 relative">
           <div className="mx-auto max-w-3xl">

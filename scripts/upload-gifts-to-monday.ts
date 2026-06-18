@@ -29,6 +29,16 @@ const ITEMS_PAGE_QUERY = `
   }
 `;
 
+// Build a human-readable item name that stays unique even when several gifts
+// share the same title (e.g. "כוס תרמוס עם קש" appears for both black and white).
+// Including the description prevents confusing two identical-looking rows.
+function buildItemName(g: { title?: string; description?: string; id: string }) {
+  const title = g.title?.trim();
+  const description = g.description?.trim();
+  if (title && description) return `${title} - ${description}`;
+  return title || g.id;
+}
+
 function requireEnv(name: keyof typeof config, friendly?: string) {
   const val = config[name];
   if (!val) {
@@ -102,6 +112,22 @@ async function updateInventoryItemStock(itemId: string, nextStock: number) {
   });
 }
 
+// "name" is Monday's built-in item-name column id; updating it renames the row
+// so existing rows also get the description-augmented, non-confusing name.
+async function updateInventoryItemName(itemId: string, name: string) {
+  const boardId = requireEnv("INVENTORY_BOARD_ID");
+  const mutation = `
+    mutation($boardId: ID!, $itemId: ID!, $value: String!) {
+      change_simple_column_value(board_id: $boardId, item_id: $itemId, column_id: "name", value: $value) { id }
+    }
+  `;
+  return mondayRequest(mutation, {
+    boardId,
+    itemId,
+    value: name,
+  });
+}
+
 async function main() {
   // Validate env
   requireEnv("MONDAY_API_KEY");
@@ -124,10 +150,11 @@ async function main() {
     const existingItemId = idMap.get(giftId);
     if (existingItemId) {
       await updateInventoryItemStock(existingItemId, stock);
+      await updateInventoryItemName(existingItemId, buildItemName(g));
       updated++;
       console.log(`Updated stock for ${giftId} -> ${stock}`);
     } else {
-      await createInventoryItem(giftId, stock, g.title || giftId);
+      await createInventoryItem(giftId, stock, buildItemName(g));
       created++;
       console.log(`Created item for ${giftId} with stock ${stock}`);
     }
