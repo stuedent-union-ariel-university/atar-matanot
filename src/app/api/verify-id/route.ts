@@ -54,12 +54,21 @@ export async function GET(request: Request) {
     const claimsBoardUserIdColumnId = CLAIMS_BOARD_USER_ID_COLUMN_ID!;
 
     const url = new URL(request.url);
-    const userId = url.searchParams.get("userId");
-    if (!userId) {
+    const rawUserId = url.searchParams.get("userId");
+    if (!rawUserId) {
       return NextResponse.json({ error: "מספר זהות נדרש" }, { status: 400 });
     }
+    const userId = rawUserId.trim();
+    // Validate format before hitting Monday (mirrors submit-gift / login).
+    if (!/^[0-9]{7,10}$/.test(userId)) {
+      return NextResponse.json(
+        { error: "נא להזין מספר זהות חוקי (7-10 ספרות)" },
+        { status: 400 },
+      );
+    }
 
-    console.info("[verify-id] Start", { userId });
+    // Note: userId is an Israeli national ID (PII) — never log its value.
+    console.info("[verify-id] Start");
 
     // Run checks sequentially to log precisely where failures occur (behavior unchanged)
     let inUserBoard = false;

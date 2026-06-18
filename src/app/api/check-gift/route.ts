@@ -39,9 +39,15 @@ export async function GET(request: Request) {
       );
     }
     const url = new URL(request.url);
-    const userId = url.searchParams.get("userId");
-    if (!userId)
+    const rawUserId = url.searchParams.get("userId");
+    if (!rawUserId)
       return NextResponse.json({ error: "מספר זהות נדרש" }, { status: 400 });
+    const userId = rawUserId.trim();
+    if (!/^[0-9]{7,10}$/.test(userId))
+      return NextResponse.json(
+        { error: "נא להזין מספר זהות חוקי (7-10 ספרות)" },
+        { status: 400 },
+      );
 
     // Use Monday's items_page_by_column_values for efficient server-side filtering
     const eligible = await findUserInBoardByColumnValues(
