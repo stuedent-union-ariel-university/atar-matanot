@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { config, isSubmissionClosed } from "@/lib/config";
-import { findUserInBoardByColumnValues } from "@/lib/monday";
+import { isSubmissionClosed } from "@/lib/config";
+import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-// Verify user ID by checking it appears in the user board,
-// and has NOT appeared yet in the claims board.
+// Verify user ID by checking it appears in the Users table,
+// and has NOT appeared yet in the GiftRequest table.
 export async function GET(request: Request) {
   try {
     // Tight limit: this endpoint reveals which IDs are eligible, so it is
@@ -22,36 +22,6 @@ export async function GET(request: Request) {
         { status: 403 },
       );
     }
-
-    const {
-      MONDAY_API_KEY,
-      USER_BOARD_ID,
-      USER_BOARD_USER_ID_COLUMN_ID,
-      CLAIMS_BOARD_ID,
-      CLAIMS_BOARD_USER_ID_COLUMN_ID,
-    } = config;
-
-    const missing: string[] = [];
-    if (!MONDAY_API_KEY) missing.push("MONDAY_API_KEY");
-    if (!USER_BOARD_ID) missing.push("USER_BOARD_ID");
-    if (!USER_BOARD_USER_ID_COLUMN_ID)
-      missing.push("USER_BOARD_USER_ID_COLUMN_ID");
-    if (!CLAIMS_BOARD_ID) missing.push("CLAIMS_BOARD_ID");
-    if (!CLAIMS_BOARD_USER_ID_COLUMN_ID)
-      missing.push("CLAIMS_BOARD_USER_ID_COLUMN_ID");
-    if (missing.length) {
-      console.error("[verify-id] Missing configuration:", missing);
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 },
-      );
-    }
-
-    // Safe non-null locals after validation above
-    const userBoardId = USER_BOARD_ID!;
-    const userBoardUserIdColumnId = USER_BOARD_USER_ID_COLUMN_ID!;
-    const claimsBoardId = CLAIMS_BOARD_ID!;
-    const claimsBoardUserIdColumnId = CLAIMS_BOARD_USER_ID_COLUMN_ID!;
 
     const url = new URL(request.url);
     const rawUserId = url.searchParams.get("userId");
@@ -71,41 +41,31 @@ export async function GET(request: Request) {
     console.info("[verify-id] Start");
 
     // Run checks sequentially to log precisely where failures occur (behavior unchanged)
-    let inUserBoard = false;
+    let isEligible = false;
     try {
-      inUserBoard = await findUserInBoardByColumnValues(
-        userBoardId,
-        userBoardUserIdColumnId,
-        userId,
-      );
-      console.info("[verify-id] user board check", {
-        boardId: userBoardId,
-        columnId: userBoardUserIdColumnId,
-        result: inUserBoard,
-      });
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      isEligible = Boolean(user);
+      console.info("[verify-id] user check", { result: isEligible });
     } catch (err) {
-      console.error("[verify-id] user board check failed", err);
+      console.error("[verify-id] user check failed", err);
       throw err;
     }
 
     let alreadyClaimed = false;
     try {
-      alreadyClaimed = await findUserInBoardByColumnValues(
-        claimsBoardId,
-        claimsBoardUserIdColumnId,
-        userId,
-      );
-      console.info("[verify-id] claims board check", {
-        boardId: claimsBoardId,
-        columnId: claimsBoardUserIdColumnId,
+      const request = await prisma.giftRequest.findUnique({
+        where: { userId },
+      });
+      alreadyClaimed = Boolean(request);
+      console.info("[verify-id] gift request check", {
         result: alreadyClaimed,
       });
     } catch (err) {
-      console.error("[verify-id] claims board check failed", err);
+      console.error("[verify-id] gift request check failed", err);
       throw err;
     }
 
-    if (!inUserBoard) {
+    if (!isEligible) {
       return NextResponse.json(
         { error: "לא נמצאת/ת ברשימת הזכאים" },
         { status: 403 },

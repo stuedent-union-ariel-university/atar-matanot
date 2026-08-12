@@ -5,12 +5,11 @@ import {
   countClaimsByGiftTitle,
   decrementInventoryForGiftId,
   incrementInventoryForGiftId,
-  findUserInBoardByColumnValues,
-  getUserNameById,
   isInventoryConfigured,
 } from "@/lib/monday";
-import { gifts } from "@/lib/gifts";
+import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { gifts as staticGifts } from "@/lib/gifts";
 
 export async function POST(request: Request) {
   try {
@@ -29,13 +28,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!config.MONDAY_API_KEY || !config.CLAIMS_BOARD_ID) {
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 },
-      );
-    }
-
     const body = await request.json();
     const { userId, giftId } = body;
 
@@ -51,34 +43,27 @@ export async function POST(request: Request) {
     }
     const normalizedUserId = userId.trim();
 
-    // Resolve gift title from provided giftId
-    const gift = gifts.find((g) => g.id === giftId);
+    // Resolve gift from the DB catalog
+    const gift = await prisma.gift.findUnique({ where: { id: giftId } });
     if (!gift) {
       return NextResponse.json({ error: "מתנה לא נמצאה" }, { status: 400 });
     }
 
-    // Re-verify eligibility server-side: the user must appear in the user board.
-    if (config.USER_BOARD_ID && config.USER_BOARD_USER_ID_COLUMN_ID) {
-      const eligible = await findUserInBoardByColumnValues(
-        config.USER_BOARD_ID,
-        config.USER_BOARD_USER_ID_COLUMN_ID,
-        normalizedUserId,
+    // Re-verify eligibility server-side against the DB source of truth.
+    const user = await prisma.user.findUnique({
+      where: { id: normalizedUserId },
+    });
+    if (!user) {
+      return NextResponse.json(
+        { error: "לא נמצאת/ת ברשימת הזכאים" },
+        { status: 403 },
       );
-      if (!eligible) {
-        return NextResponse.json(
-          { error: "לא נמצאת/ת ברשימת הזכאים" },
-          { status: 403 },
-        );
-      }
     }
 
-    // Check if user has already claimed a gift (server-side filtered, covers the whole board)
-    const userColumnId = config.CLAIMS_BOARD_USER_ID_COLUMN_ID || "text";
-    const alreadyClaimed = await findUserInBoardByColumnValues(
-      config.CLAIMS_BOARD_ID,
-      userColumnId,
-      normalizedUserId,
-    );
+    // Check if user has already claimed a gift
+    const alreadyClaimed = await prisma.giftRequest.findUnique({
+      where: { userId: normalizedUserId },
+    });
     if (alreadyClaimed) {
       return NextResponse.json(
         { error: "כבר בחרת מתנה בעבר" },
@@ -97,9 +82,9 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // Fallback to static stock - claims aggregation
+      // Fallback to static stock - claims aggregation (no live inventory board configured)
       const counts = await countClaimsByGiftTitle();
-      const stock = gift.stock ?? 0;
+      const stock = staticGifts.find((g) => g.id === gift.id)?.stock ?? 0;
       const claimed = counts[gift.title] || 0;
       if (stock - claimed <= 0) {
         return NextResponse.json(
@@ -109,20 +94,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Fetch user name (best-effort) to store on claims board
-    let userName: string | null = null;
+    // Write the gift request to the DB — this is the record of truth.
+    let giftRequest;
     try {
-      userName = await getUserNameById(normalizedUserId);
-    } catch {}
-
-    // Create new item in claims board to log the redemption; include user name if available
-    try {
-      await createClaimItem(
-        config.CLAIMS_BOARD_ID,
-        normalizedUserId,
-        gift.title,
-        userName ?? undefined,
-      );
+      giftRequest = await prisma.giftRequest.create({
+        data: { userId: normalizedUserId, giftId: gift.id },
+      });
     } catch (e) {
       // Compensation: if inventory was decremented, add it back
       if (isInventoryConfigured()) {
@@ -130,7 +107,40 @@ export async function POST(request: Request) {
           await incrementInventoryForGiftId(gift.id);
         } catch {}
       }
-      throw e;
+      // Unique constraint violation = a concurrent request beat us to it
+      return NextResponse.json(
+        { error: "כבר בחרת מתנה בעבר" },
+        { status: 400 },
+      );
+    }
+
+    // Best-effort mirror into the Monday claims board. Failures here don't
+    // fail the request or roll anything back — the DB row above is the
+    // source of truth for the gift request.
+    if (config.MONDAY_API_KEY && config.CLAIMS_BOARD_ID) {
+      try {
+        const created = await createClaimItem(
+          config.CLAIMS_BOARD_ID,
+          normalizedUserId,
+          gift.title,
+          user.name ?? undefined,
+        );
+        await prisma.giftRequest.update({
+          where: { id: giftRequest.id },
+          data: {
+            mondayItemId: created.create_item?.id,
+            mondaySyncedAt: new Date(),
+          },
+        });
+      } catch (e) {
+        console.error("Failed to mirror gift request to Monday:", e);
+        await prisma.giftRequest
+          .update({
+            where: { id: giftRequest.id },
+            data: { mondaySyncError: (e as Error).message?.slice(0, 500) },
+          })
+          .catch(() => {});
+      }
     }
 
     return NextResponse.json({ success: true });

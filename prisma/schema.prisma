@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String       @id // Israeli ID, e.g. "123456789" — matches the userId string used throughout the app
+  name      String?
+  createdAt DateTime     @default(now())
+  request   GiftRequest?
+}
+
+model Gift {
+  id          String        @id // slug, matches the ids in the Monday inventory board's giftId column
+  title       String
+  description String?
+  image       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  requests    GiftRequest[]
+}
+
+model GiftRequest {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  giftId          String
+  user            User      @relation(fields: [userId], references: [id])
+  gift            Gift      @relation(fields: [giftId], references: [id])
+  mondayItemId    String?
+  mondaySyncedAt  DateTime?
+  mondaySyncError String?
+  createdAt       DateTime  @default(now())
+}

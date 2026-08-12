@@ -5,7 +5,7 @@ import type {
   ItemsPageQueryData,
   CreateItemResponse,
 } from "@/types/monday";
-import { gifts as baseGifts, type Gift } from "@/lib/gifts";
+import type { Gift } from "@/lib/gifts";
 
 // Abort requests that hang so API routes always respond in bounded time.
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -336,12 +336,13 @@ export function isInventoryConfigured(): boolean {
   );
 }
 
-// Compute remaining quantities for each configured gift by subtracting claims.
-export async function getGiftsWithRemaining(): Promise<Gift[]> {
+// Compute remaining quantities for each gift in the given catalog by merging in
+// live Monday stock (or, as a fallback, subtracting claims board aggregation).
+export async function getGiftsWithRemaining(catalog: Gift[]): Promise<Gift[]> {
   // If an inventory board is configured, prefer using its live stock numbers
   if (isInventoryConfigured()) {
     const inventory = await getInventoryMap();
-    return baseGifts.map((g) => {
+    return catalog.map((g) => {
       const stockStr = inventory.get(g.id);
       const stock =
         stockStr != null
@@ -354,7 +355,7 @@ export async function getGiftsWithRemaining(): Promise<Gift[]> {
 
   // Fallback to static stock minus claims board aggregation
   const counts = await countClaimsByGiftTitle();
-  return baseGifts.map((g) => {
+  return catalog.map((g) => {
     const stock = g.stock ?? 0;
     const claimed = counts[g.title] || 0;
     const remaining = Math.max(0, stock - claimed);

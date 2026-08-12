@@ -1,6 +1,6 @@
-import { config, isSubmissionClosed } from "@/lib/config";
+import { isSubmissionClosed } from "@/lib/config";
 import { NextResponse } from "next/server";
-import { findUserInBoardByColumnValues } from "@/lib/monday";
+import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
@@ -19,25 +19,6 @@ export async function GET(request: Request) {
       );
     }
 
-    const {
-      MONDAY_API_KEY,
-      USER_BOARD_ID,
-      CLAIMS_BOARD_ID,
-      USER_BOARD_USER_ID_COLUMN_ID,
-      CLAIMS_BOARD_USER_ID_COLUMN_ID,
-    } = config;
-    if (
-      !MONDAY_API_KEY ||
-      !USER_BOARD_ID ||
-      !CLAIMS_BOARD_ID ||
-      !USER_BOARD_USER_ID_COLUMN_ID ||
-      !CLAIMS_BOARD_USER_ID_COLUMN_ID
-    ) {
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 },
-      );
-    }
     const url = new URL(request.url);
     const rawUserId = url.searchParams.get("userId");
     if (!rawUserId)
@@ -49,23 +30,16 @@ export async function GET(request: Request) {
         { status: 400 },
       );
 
-    // Use Monday's items_page_by_column_values for efficient server-side filtering
-    const eligible = await findUserInBoardByColumnValues(
-      USER_BOARD_ID,
-      USER_BOARD_USER_ID_COLUMN_ID,
-      userId,
-    );
-    if (!eligible)
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user)
       return NextResponse.json(
         { error: "נראה שאתה לא ברשימת משלמי דמי הרווחה" },
         { status: 403 },
       );
 
-    const claimed = await findUserInBoardByColumnValues(
-      CLAIMS_BOARD_ID,
-      CLAIMS_BOARD_USER_ID_COLUMN_ID,
-      userId,
-    );
+    const claimed = await prisma.giftRequest.findUnique({
+      where: { userId },
+    });
     if (claimed)
       return NextResponse.json({ error: "כבר בחרת מתנה" }, { status: 400 });
 
