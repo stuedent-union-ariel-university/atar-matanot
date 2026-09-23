@@ -6,9 +6,16 @@
  *  - Column B: user name (optional but recommended)
  *  - Header row is skipped by default; pass --no-header if there is no header.
  *
+ * After upserting, the User table is made to match the file exactly: any
+ * user in the DB but not in the file is removed. Users with an existing
+ * GiftRequest are never removed, even if absent from the file, since
+ * GiftRequest.userId requires the user to exist — this keeps claims intact.
+ * Pass --no-clean to skip this removal step.
+ *
  * Examples:
  *  pnpm tsx scripts/seed-users-to-db.ts --file ./users.xlsx --dry
  *  pnpm tsx scripts/seed-users-to-db.ts --file ./users.xlsx
+ *  pnpm tsx scripts/seed-users-to-db.ts --file ./users.xlsx --no-clean
  */
 import "dotenv/config";
 import { readFile, utils as XLSXUtils, WorkBook } from "xlsx";
@@ -81,6 +88,7 @@ async function main() {
 
   const dry = toBool(args.get("dry"));
   const noHeader = toBool(args.get("no-header"));
+  const clean = !toBool(args.get("no-clean"));
   const limit = Number(args.get("limit") ?? Infinity);
   const batchSize = Number(args.get("batch") ?? 100);
 
@@ -103,11 +111,21 @@ async function main() {
     return;
   }
 
+  const fileIds = users.map((u) => u.id);
+
   console.log(`Preparing to upsert ${total} user(s) into the database`);
   if (dry) {
     console.log("Dry-run. First 10 rows:");
     for (const u of users.slice(0, Math.min(10, total))) {
       console.log(` - id: ${u.id}\tname: ${u.name ?? ""}`);
+    }
+    if (clean) {
+      const staleCount = await prisma.user.count({
+        where: { id: { notIn: fileIds }, request: null },
+      });
+      console.log(
+        `Would also remove ${staleCount} user(s) not in the file (users with an existing gift request are never removed).`,
+      );
     }
     console.log("Pass without --dry to execute.");
     return;
@@ -129,6 +147,15 @@ async function main() {
     process.stdout.write(`\rUpserted: ${done}/${total}`);
   }
   console.log("\nDone.");
+
+  if (clean) {
+    const { count } = await prisma.user.deleteMany({
+      where: { id: { notIn: fileIds }, request: null },
+    });
+    console.log(
+      `Removed ${count} stale user(s) not in the file (users with an existing gift request were kept).`,
+    );
+  }
 }
 
 main()
