@@ -24,8 +24,9 @@ export async function GET(request: Request) {
       })),
     );
     return NextResponse.json({ gifts });
-  } catch {
+  } catch (e) {
     // Fallback to empty list if Monday is misconfigured, avoiding server error.
+    console.error("[gifts] failed to load gifts", e);
     return NextResponse.json({ gifts: [] }, { status: 200 });
   }
 }
