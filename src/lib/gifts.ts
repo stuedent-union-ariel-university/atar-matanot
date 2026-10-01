@@ -34,8 +34,8 @@ export const gifts: Gift[] = [
     id: "white-thermal-cup-with-straw",
     title: "כוס תרמוס עם קש",
     description: "לבן",
-    image: "/gifts/white-thermal-cup-with-straw.png",
-    stock: 120,
+    image: "/gifts/white-thermal-cup-with-straw.jpg",
+    stock: 1000,
   },
   {
     id: "gray-cooler-8l",
@@ -118,5 +118,24 @@ export const gifts: Gift[] = [
     description: "שחור",
     image: "/gifts/black-premium-laptop-backpack.png",
     stock: 40,
+  },
+  // New items from supplier stock list (SKUs kept in comments for traceability)
+  {
+    id: "quality-laptop-backpack", // OSK263
+    title: "תיק גב איכותי למחשב",
+    image: "/gifts/quality-laptop-backpack.jpg",
+    stock: 1000,
+  },
+  {
+    id: "personal-cooler-bag", // OSM2205
+    title: "צידנית אישית",
+    image: "/gifts/personal-cooler-bag.jpg",
+    stock: 1000,
+  },
+  {
+    id: "laptop-bag-osp4583f", // Osp4583F
+    title: "תיק מחשב נייד",
+    image: "/gifts/laptop-bag-osp4583f.jpg",
+    stock: 850,
   },
 ];
