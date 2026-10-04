@@ -28,13 +28,19 @@ export const gifts: Gift[] = [
     title: "כוס תרמוס עם קש",
     description: "שחור",
     image: "/gifts/black-thermal-cup-with-straw.png",
-    stock: 288,
+    stock: 280,
   },
   {
     id: "white-thermal-cup-with-straw",
     title: "כוס תרמוס עם קש",
     description: "לבן",
-    image: "/gifts/white-thermal-cup-with-straw.jpg",
+    image: "/gifts/white-thermal-cup-with-straw.png",
+    stock: 110,
+  },
+  {
+    id: "white-thermal-cup-with-straw-new",
+    title: "כוס תרמוס עם קש",
+    description: "לבן חדשה 700 מל",
     stock: 1000,
   },
   {
@@ -42,28 +48,28 @@ export const gifts: Gift[] = [
     title: "צידנית 8 ליטר",
     description: "אפור",
     image: "/gifts/gray-cooler-8l.png",
-    stock: 480,
+    stock: 470,
   },
   {
     id: "regular-laptop-tablet-tray",
     title: "מגש פינוק למחשב נייד / טאבלט",
     description: "רגיל",
     image: "/gifts/regular-laptop-tablet-tray.png",
-    stock: 195,
+    stock: 185,
   },
   {
     id: "gray-laptop-tablet-tray",
     title: "מגש פינוק למחשב נייד / טאבלט",
     description: "אפור",
     image: "/gifts/gray-laptop-tablet-tray.png",
-    stock: 78,
+    stock: 68,
   },
   {
     id: "laptop-bag",
     title: "תיק למחשב",
     description: "רגיל",
     image: "/gifts/laptop-bag.png",
-    stock: 60,
+    stock: 50,
   },
   {
     id: "recycled-polo-line-laptop-bag",
@@ -73,16 +79,10 @@ export const gifts: Gift[] = [
     stock: 20,
   },
   {
-    id: "luxury-coral-fleece-double-blanket",
-    title: "שמיכת קורל פליז זוגית יוקרתית",
-    image: "/gifts/luxury-coral-fleece-double-blanket.png",
-    stock: 200,
-  },
-  {
     id: "laptop-stand",
     title: "מעמד מחשב",
     image: "/gifts/laptop-stand.png",
-    stock: 262,
+    stock: 260,
   },
   {
     id: "gray-polo-sports-bag",
@@ -119,17 +119,17 @@ export const gifts: Gift[] = [
     image: "/gifts/black-premium-laptop-backpack.png",
     stock: 40,
   },
-  // New items from supplier stock list (SKUs kept in comments for traceability)
   {
     id: "quality-laptop-backpack", // OSK263
-    title: "תיק גב איכותי למחשב",
+    title: "תיק גב איכותי למחשב אפור",
+    description: "אפור",
     image: "/gifts/quality-laptop-backpack.jpg",
     stock: 1000,
   },
   {
     id: "personal-cooler-bag", // OSM2205
     title: "צידנית אישית",
-    image: "/gifts/personal-cooler-bag.jpg",
+    image: "/gifts/personal-cooler-bag.png",
     stock: 1000,
   },
   {
