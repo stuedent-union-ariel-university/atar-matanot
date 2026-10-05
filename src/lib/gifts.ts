@@ -40,7 +40,8 @@ export const gifts: Gift[] = [
   {
     id: "white-thermal-cup-with-straw-new",
     title: "כוס תרמוס עם קש",
-    description: "לבן חדשה 700 מל",
+    description: "לבן 700 מל",
+    image: "/gifts/white-thermal-cup-with-straw.png",
     stock: 1000,
   },
   {
@@ -81,7 +82,7 @@ export const gifts: Gift[] = [
   {
     id: "laptop-stand",
     title: "מעמד מחשב",
-    image: "/gifts/laptop-stand.png",
+    image: "/מעמד-למחשב.png",
     stock: 260,
   },
   {
@@ -124,13 +125,50 @@ export const gifts: Gift[] = [
     title: "תיק גב איכותי למחשב אפור",
     description: "אפור",
     image: "/gifts/quality-laptop-backpack.jpg",
-    stock: 1000,
+    stock: 0,
   },
   {
-    id: "personal-cooler-bag", // OSM2205
+    id: "black-quality-laptop-backpack",
+    title: "תיק גב איכותי למחשב",
+    description: "שחור",
+    image: "/gifts/black-quality-laptop-backpack.png",
+    stock: 0,
+  },
+  {
+    id: "blue-quality-laptop-backpack",
+    title: "תיק גב איכותי למחשב",
+    description: "כחול",
+    image: "/gifts/blue-quality-laptop-backpack.png",
+    stock: 0,
+  },
+
+  {
+    id: "black-lunch-cooler",
     title: "צידנית אישית",
-    image: "/gifts/personal-cooler-bag.png",
-    stock: 1000,
+    description: "שחור",
+    image: "/gifts/black-lunch-cooler.png",
+    stock: 250,
+  },
+  {
+    id: "blue-lunch-cooler",
+    title: "צידנית אישית",
+    description: "כחול",
+    image: "/gifts/blue-lunch-cooler.png",
+    stock: 250,
+  },
+  {
+    id: "cream-lunch-cooler",
+    title: "צידנית אישית",
+    description: "לבן",
+    image: "/gifts/cream-lunch-cooler.png",
+    stock: 250,
+  },
+  {
+    id: "gray-lunch-cooler",
+    title: "צידנית אישית",
+    description: "אפור",
+    image: "/gifts/gray-lunch-cooler.png",
+    stock: 250,
   },
   {
     id: "laptop-bag-osp4583f", // Osp4583F
