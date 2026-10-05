@@ -59,13 +59,6 @@ export const gifts: Gift[] = [
     stock: 185,
   },
   {
-    id: "gray-laptop-tablet-tray",
-    title: "מגש פינוק למחשב נייד / טאבלט",
-    description: "אפור",
-    image: "/gifts/gray-laptop-tablet-tray.png",
-    stock: 68,
-  },
-  {
     id: "laptop-bag",
     title: "תיק למחשב",
     description: "רגיל",
