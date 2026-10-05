@@ -20,9 +20,16 @@ function cleanupExpired(now: number) {
   }
 }
 
+// The leftmost X-Forwarded-For entry is whatever the client sent, so it can be
+// forged to get a fresh rate-limit bucket on every request. Proxies append the
+// address they saw, so the rightmost entry is the one to trust (one trusted
+// proxy in front of the app is assumed).
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
+  if (forwarded) {
+    const parts = forwarded.split(",");
+    return parts[parts.length - 1].trim() || "unknown";
+  }
   return request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
