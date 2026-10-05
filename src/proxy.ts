@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Content-Security-Policy with a fresh nonce per request. Next.js reads the
 // nonce from the request's CSP header and applies it to its own inline scripts,
 // so only scripts carrying the nonce (plus same-origin files) can run.
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const isDev = process.env.NODE_ENV === "development";
 

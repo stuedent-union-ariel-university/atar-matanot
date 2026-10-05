@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       giftRequest = await prisma.giftRequest.create({
         data: { userId: normalizedUserId, giftId: gift.id },
       });
-    } catch (e) {
+    } catch {
       // Compensation: if inventory was decremented, add it back
       if (isInventoryConfigured()) {
         try {
