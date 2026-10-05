@@ -2,10 +2,22 @@ import { NextResponse } from "next/server";
 import { isSubmissionClosed } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  checksumEnforced,
+  hasValidCheckDigit,
+  normalizeUserId,
+} from "@/lib/id";
+import {
+  SESSION_COOKIE,
+  createSessionToken,
+  sessionCookieOptions,
+} from "@/lib/session";
 
 // Verify user ID by checking it appears in the Users table,
 // and has NOT appeared yet in the GiftRequest table.
-export async function GET(request: Request) {
+// On success, sets a signed session cookie so later requests don't need the ID.
+// The ID is sent in the JSON body, never in the URL.
+export async function POST(request: Request) {
   try {
     // Tight limit: this endpoint reveals which IDs are eligible, so it is
     // the main target for ID enumeration.
@@ -23,14 +35,15 @@ export async function GET(request: Request) {
       );
     }
 
-    const url = new URL(request.url);
-    const rawUserId = url.searchParams.get("userId");
-    if (!rawUserId) {
-      return NextResponse.json({ error: "מספר זהות נדרש" }, { status: 400 });
+    const body = await request.json().catch(() => null);
+    const userId = normalizeUserId(body?.userId);
+    if (!userId) {
+      return NextResponse.json(
+        { error: "נא להזין מספר זהות חוקי (7-10 ספרות)" },
+        { status: 400 },
+      );
     }
-    const userId = rawUserId.trim();
-    // Validate format before hitting Monday (mirrors submit-gift / login).
-    if (!/^[0-9]{7,10}$/.test(userId)) {
+    if (checksumEnforced() && !hasValidCheckDigit(userId)) {
       return NextResponse.json(
         { error: "נא להזין מספר זהות חוקי (7-10 ספרות)" },
         { status: 400 },
@@ -53,10 +66,10 @@ export async function GET(request: Request) {
 
     let alreadyClaimed = false;
     try {
-      const request = await prisma.giftRequest.findUnique({
+      const giftRequest = await prisma.giftRequest.findUnique({
         where: { userId },
       });
-      alreadyClaimed = Boolean(request);
+      alreadyClaimed = Boolean(giftRequest);
       console.info("[verify-id] gift request check", {
         result: alreadyClaimed,
       });
@@ -75,7 +88,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "כבר בחרת מתנה" }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    response.cookies.set(
+      SESSION_COOKIE,
+      createSessionToken(userId),
+      sessionCookieOptions,
+    );
+    return response;
   } catch (e) {
     console.error("[verify-id] unhandled error", e);
     return NextResponse.json(

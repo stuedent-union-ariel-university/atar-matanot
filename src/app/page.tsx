@@ -3,16 +3,11 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import GiftGrid from "@/components/GiftGrid";
+import { getSessionUserId } from "@/lib/session";
 
-export default async function Home({
-  searchParams,
-}: {
-  // In Next.js 15, searchParams is async in Server Components
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
-  // If no userId provided in the URL, redirect to login page
-  if (!params?.userId) {
+export default async function Home() {
+  // No verified session cookie: send the user to log in first.
+  if (!(await getSessionUserId())) {
     redirect("/login");
   }
   return (

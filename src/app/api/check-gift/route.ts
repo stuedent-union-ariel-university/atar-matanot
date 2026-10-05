@@ -2,7 +2,10 @@ import { isSubmissionClosed } from "@/lib/config";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getSessionUserId } from "@/lib/session";
 
+// Reports whether the signed-in user may still choose a gift.
+// The user ID comes from the session cookie, not from the URL.
 export async function GET(request: Request) {
   try {
     const limited = checkRateLimit(request, "check-gift", {
@@ -19,16 +22,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const url = new URL(request.url);
-    const rawUserId = url.searchParams.get("userId");
-    if (!rawUserId)
-      return NextResponse.json({ error: "מספר זהות נדרש" }, { status: 400 });
-    const userId = rawUserId.trim();
-    if (!/^[0-9]{7,10}$/.test(userId))
-      return NextResponse.json(
-        { error: "נא להזין מספר זהות חוקי (7-10 ספרות)" },
-        { status: 400 },
-      );
+    const userId = await getSessionUserId();
+    if (!userId)
+      return NextResponse.json({ error: "נדרש אימות מחדש" }, { status: 401 });
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user)

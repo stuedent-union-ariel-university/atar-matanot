@@ -1,15 +1,13 @@
 "use client"; // This ensures the component is only rendered on the client side
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { config, isSubmissionClosed } from "@/lib/config";
 import type { Gift } from "@/lib/gifts";
 
 export default function GiftGrid() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const userId = searchParams.get("userId");
 
   const [checkingEligibility, setCheckingEligibility] = useState(true);
   const [isEligible, setIsEligible] = useState(false);
@@ -42,20 +40,18 @@ export default function GiftGrid() {
   }, [fetchGifts]);
 
   useEffect(() => {
-    if (!userId) {
-      setCheckingEligibility(false);
-      return;
-    }
-
     let cancelled = false;
     const checkEligibility = async () => {
       try {
-        const response = await fetch(
-          `${config.API_CHECK_GIFT_URL}?userId=${encodeURIComponent(userId)}`,
-        );
+        // The session cookie identifies the user; no ID is sent here.
+        const response = await fetch(config.API_CHECK_GIFT_URL);
         const data = await response.json();
         if (cancelled) return;
 
+        if (response.status === 401) {
+          router.replace("/login");
+          return;
+        }
         if (!response.ok) {
           throw new Error(data.error || "אירעה שגיאה");
         }
@@ -75,10 +71,10 @@ export default function GiftGrid() {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [router]);
 
   const handleSubmit = async () => {
-    if (!userId || !selectedGiftId) {
+    if (!selectedGiftId) {
       setSubmitError("יש לבחור מתנה תחילה");
       return;
     }
@@ -90,11 +86,15 @@ export default function GiftGrid() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId, giftId: selectedGiftId }),
+        body: JSON.stringify({ giftId: selectedGiftId }),
       });
 
       const data = await response.json();
 
+      if (response.status === 401) {
+        router.replace("/login");
+        return;
+      }
       if (!response.ok) {
         throw new Error(data.error || "אירעה שגיאה בשמירת הבחירה");
       }
@@ -122,14 +122,6 @@ export default function GiftGrid() {
     return (
       <div className="w-full max-w-6xl mx-auto flex items-center justify-center min-h-50">
         <div className="spinner" />
-      </div>
-    );
-  }
-
-  if (!userId) {
-    return (
-      <div className="alert alert-error text-rose-800 mb-6">
-        מספר זהות לא נמצא בקישור
       </div>
     );
   }

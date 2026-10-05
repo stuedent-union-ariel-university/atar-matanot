@@ -30,18 +30,17 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(
-        `${config.API_VERIFY_ID_URL}?userId=${encodeURIComponent(trimmed)}`,
-        {
-          method: "GET",
-        },
-      );
+      // The ID goes in the request body, and the server answers with a session cookie.
+      const res = await fetch(config.API_VERIFY_ID_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: trimmed }),
+      });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data?.error || "שגיאת אימות");
       }
-      // Redirect to main page with userId so gift grid can use it
-      router.push(`/?userId=${encodeURIComponent(trimmed)}`);
+      router.push("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "שגיאת אימות");
     } finally {

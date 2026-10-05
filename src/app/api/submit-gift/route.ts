@@ -9,6 +9,7 @@ import {
 } from "@/lib/monday";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getSessionUserId } from "@/lib/session";
 import { gifts as staticGifts } from "@/lib/gifts";
 
 export async function POST(request: Request) {
@@ -28,20 +29,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
-    const { userId, giftId } = body;
+    // The identity comes from the verified session cookie, never from the body.
+    const normalizedUserId = await getSessionUserId();
+    if (!normalizedUserId) {
+      return NextResponse.json({ error: "נדרש אימות מחדש" }, { status: 401 });
+    }
 
-    if (
-      typeof userId !== "string" ||
-      typeof giftId !== "string" ||
-      !/^[0-9]{7,10}$/.test(userId.trim())
-    ) {
+    const body = await request.json().catch(() => null);
+    const giftId = body?.giftId;
+    if (typeof giftId !== "string") {
       return NextResponse.json(
-        { error: "מספר זהות ומזהה מתנה נדרשים" },
+        { error: "מזהה מתנה נדרש" },
         { status: 400 },
       );
     }
-    const normalizedUserId = userId.trim();
 
     // Resolve gift from the DB catalog
     const gift = await prisma.gift.findUnique({ where: { id: giftId } });

@@ -3,6 +3,10 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
 import "./globals.css";
 
+// Render per request so the CSP nonce from src/middleware.ts reaches Next's inline scripts.
+// A prerendered page has no request to take a nonce from, and the browser would block it.
+export const dynamic = "force-dynamic";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
 // In-memory fixed-window rate limiter, keyed by bucket + client IP.
-// Note: state is per server instance. On serverless hosting each warm
-// instance counts separately, so treat the limits here as a burst guard;
-// for a hard global limit use an external store (e.g. Upstash) or a WAF rule.
+// State is per server instance. On serverless hosting each warm instance counts
+// separately, so treat these limits as a burst guard rather than a hard global cap.
 
 type Window = { count: number; resetAt: number };
 
