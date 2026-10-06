@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { config, isSubmissionClosed } from "@/lib/config";
+import { config } from "@/lib/config";
 import type { Gift } from "@/lib/gifts";
 
 export default function GiftGrid() {
@@ -19,8 +19,6 @@ export default function GiftGrid() {
     const [gifts, setGifts] = useState<Gift[]>([]);
     const [giftsLoading, setGiftsLoading] = useState(true);
     const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
-
-    const isAfterDeadline = isSubmissionClosed();
 
     const fetchGifts = useCallback(async () => {
         try {
@@ -140,20 +138,6 @@ export default function GiftGrid() {
             <div className="alert alert-error text-rose-800 mb-6">
                 <span className="font-semibold text-rose-700">שגיאה:</span>{" "}
                 {blockingError}
-            </div>
-        );
-    }
-
-    if (isAfterDeadline) {
-        return (
-            <div
-                className="alert alert-error text-rose-800 mb-6 py-8"
-                dir="rtl"
-            >
-                <h2 className="text-xl font-bold mb-2">
-                    מועד בחירת המתנות הסתיים
-                </h2>
-                <p>ניתן היה לבחור מתנה עד ל-1 במרץ 2026 בחצות.</p>
             </div>
         );
     }

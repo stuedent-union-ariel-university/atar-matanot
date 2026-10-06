@@ -41,13 +41,6 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased relative overflow-x-hidden noise-layer`}
             >
-                {/* Deadline banner disabled for now
-        <div className="sticky top-0 z-50 bg-[#3B7FC4] text-white py-2.5 px-4 shadow-md">
-          <div className="max-w-7xl mx-auto text-center font-bold text-sm md:text-base">
-            אפשר להגיש בקשה למתנה עד ל3/1/26
-          </div>
-        </div>
-        */}
                 <div
                     className="absolute inset-0 bg-grid pointer-events-none"
                     aria-hidden="true"

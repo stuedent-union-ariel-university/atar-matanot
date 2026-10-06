@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { config, isSubmissionClosed } from "@/lib/config";
+import { config } from "@/lib/config";
 
 export default function LoginPage() {
     const [userId, setUserId] = useState("");
@@ -10,17 +10,10 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    const isAfterDeadline = isSubmissionClosed();
-
     const validateId = (id: string) => /^[0-9]{7,10}$/.test(id.trim());
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (isAfterDeadline) {
-            setError("מועד בחירת המתנות הסתיים ב-1 במרץ 2026");
-            return;
-        }
 
         const trimmed = userId.trim();
         if (!validateId(trimmed)) {
@@ -68,62 +61,49 @@ export default function LoginPage() {
                         className="absolute -inset-6 rounded-[28px] bg-gradient-to-br from-[#3B7FC4]/20 via-transparent to-[#3B7FC4]/5 blur-2xl pointer-events-none"
                         aria-hidden="true"
                     />
-                    {isAfterDeadline ? (
-                        <div className="relative glass glass-border p-6 md:p-8 text-center">
-                            <div className="text-rose-700 font-bold text-lg mb-2">
-                                מועד בחירת המתנות הסתיים
-                            </div>
-                            <p className="text-slate-600">
-                                ניתן היה לבחור מתנה עד ל-1 במרץ 2026 בחצות.
-                            </p>
-                        </div>
-                    ) : (
-                        <form
-                            onSubmit={handleSubmit}
-                            className="relative glass glass-border p-6 md:p-8"
+                    <form
+                        onSubmit={handleSubmit}
+                        className="relative glass glass-border p-6 md:p-8"
+                    >
+                        <label
+                            htmlFor="userId"
+                            className="block text-sm font-medium mb-2"
                         >
-                            <label
-                                htmlFor="userId"
-                                className="block text-sm font-medium mb-2"
-                            >
-                                מספר זהות
-                            </label>
-                            <input
-                                id="userId"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                maxLength={10}
-                                autoComplete="one-time-code"
-                                className="w-full rounded-lg border px-4 py-2 text-right"
-                                placeholder="לדוגמה: 123456789"
-                                value={userId}
-                                onChange={(e) =>
-                                    setUserId(
-                                        e.target.value.replace(/[^0-9]/g, ""),
-                                    )
-                                }
-                            />
+                            מספר זהות
+                        </label>
+                        <input
+                            id="userId"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={10}
+                            autoComplete="one-time-code"
+                            className="w-full rounded-lg border px-4 py-2 text-right"
+                            placeholder="לדוגמה: 123456789"
+                            value={userId}
+                            onChange={(e) =>
+                                setUserId(e.target.value.replace(/[^0-9]/g, ""))
+                            }
+                        />
 
-                            {error && (
-                                <div className="mt-3 text-rose-700 text-sm">
-                                    {error}
-                                </div>
-                            )}
+                        {error && (
+                            <div className="mt-3 text-rose-700 text-sm">
+                                {error}
+                            </div>
+                        )}
 
-                            <button
-                                type="submit"
-                                disabled={loading || userId.length === 0}
-                                className="btn-futuristic mt-6 w-full disabled:opacity-40"
-                            >
-                                <span className="relative flex items-center justify-center gap-2">
-                                    {loading && (
-                                        <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                                    )}
-                                    {loading ? "מאמת..." : "המשך לבחירת מתנה"}
-                                </span>
-                            </button>
-                        </form>
-                    )}
+                        <button
+                            type="submit"
+                            disabled={loading || userId.length === 0}
+                            className="btn-futuristic mt-6 w-full disabled:opacity-40"
+                        >
+                            <span className="relative flex items-center justify-center gap-2">
+                                {loading && (
+                                    <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                                )}
+                                {loading ? "מאמת..." : "המשך לבחירת מתנה"}
+                            </span>
+                        </button>
+                    </form>
                 </div>
 
                 <p className="mt-10 text-center text-base text-slate-600">

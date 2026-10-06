@@ -1,4 +1,4 @@
-import { config, isSubmissionClosed } from "@/lib/config";
+import { config } from "@/lib/config";
 import { NextResponse } from "next/server";
 import {
     createClaimItem,
@@ -20,14 +20,6 @@ export async function POST(request: Request) {
             windowMs: 60_000,
         });
         if (limited) return limited;
-
-        // Check if the submission deadline has passed
-        if (isSubmissionClosed()) {
-            return NextResponse.json(
-                { error: "מועד בחירת המתנות הסתיים ב-1 במרץ 2026" },
-                { status: 403 },
-            );
-        }
 
         // The identity comes from the verified session cookie, never from the body.
         const normalizedUserId = await getSessionUserId();

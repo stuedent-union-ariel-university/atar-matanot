@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { isSubmissionClosed } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
@@ -26,14 +25,6 @@ export async function POST(request: Request) {
             windowMs: 60_000,
         });
         if (limited) return limited;
-
-        // Check if the submission deadline has passed
-        if (isSubmissionClosed()) {
-            return NextResponse.json(
-                { error: "מועד בחירת המתנות הסתיים" },
-                { status: 403 },
-            );
-        }
 
         const body = await request.json().catch(() => null);
         const userId = normalizeUserId(body?.userId);
