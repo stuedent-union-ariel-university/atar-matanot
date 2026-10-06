@@ -40,7 +40,7 @@ export const gifts: Gift[] = [
     {
         id: "laptop-stand",
         title: "מעמד מחשב",
-        image: "/מעמד-למחשב.png",
+        image: "/gifts/laptop-stand.png",
         stock: 260,
     },
     {
@@ -110,21 +110,21 @@ export const gifts: Gift[] = [
         id: "quality-laptop-backpack", // OSK263
         title: "תיק גב איכותי למחשב אפור",
         description: "אפור",
-        image: "/gifts/quality-laptop-backpack.jpg",
+        image: "/gifts/gray-backpack.jpeg",
         stock: 0,
     },
     {
         id: "blue-premium-laptop-backpack",
         title: "תיק גב מפואר למחשב",
         description: "כחול",
-        image: "/תיק-גב-כחול.png",
+        image: "/gifts/blue-premium-laptop-backpack.png",
         stock: 40,
     },
     {
         id: "black-premium-laptop-backpack",
         title: "תיק גב מפואר למחשב",
         description: "שחור",
-        image: "/תיק-גב-שחור.png",
+        image: "/gifts/black-premium-laptop-backpack.png",
         stock: 40,
     },
     {
@@ -151,7 +151,7 @@ export const gifts: Gift[] = [
         id: "gray-polo-sports-bag",
         title: "תיק ספורט פולו",
         description: "אפור",
-        image: "/gifts/gray-polo-sports-bag.png",
+        image: "/gifts/gray-sportsbag.jpeg",
         stock: 525,
     },
     {
@@ -165,6 +165,7 @@ export const gifts: Gift[] = [
         id: "black-polo-sports-bag",
         title: "תיק ספורט פולו",
         description: "שחור",
+        image: "/gifts/black-polo-sports-bag.jpeg",
         stock: 450,
     },
 ];
