@@ -1,44 +1,44 @@
 {
-  "name": "atar-matanot",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint",
-    "postinstall": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:seed:gifts": "tsx scripts/seed-gifts-to-db.ts",
-    "db:seed:users": "tsx scripts/seed-users-to-db.ts",
-    "upload:gifts": "tsx scripts/upload-gifts-to-monday.ts",
-    "seed:users": "tsx scripts/add-users-to-monday.ts --count 10000",
-    "clean:users": "tsx scripts/remove-users-from-monday.ts --yes",
-    "clean:users:dry": "tsx scripts/remove-users-from-monday.ts",
-    "clean:users:delete": "tsx scripts/remove-users-from-monday.ts --yes --delete"
-  },
-  "dependencies": {
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.10.0",
-    "next": "16.3.8",
-    "pg": "^8.23.1",
-    "react": "19.3.0",
-    "react-confetti": "^6.4.0",
-    "react-dom": "19.3.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.6.4",
-    "@types/pg": "^8.23.1",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "dotenv": "^18.0.5",
-    "eslint": "^9.39.5",
-    "eslint-config-next": "16.3.8",
-    "prisma": "^7.10.0",
-    "tailwindcss": "^4.3.3",
-    "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
-    "xlsx": "0.18.5"
-  }
+    "name": "atar-matanot",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev --turbopack",
+        "build": "next build --turbopack",
+        "start": "next start",
+        "lint": "eslint",
+        "postinstall": "prisma generate",
+        "db:migrate": "prisma migrate dev",
+        "db:seed:gifts": "tsx scripts/seed-gifts-to-db.ts",
+        "db:seed:users": "tsx scripts/seed-users-to-db.ts",
+        "upload:gifts": "tsx scripts/upload-gifts-to-monday.ts",
+        "seed:users": "tsx scripts/add-users-to-monday.ts --count 10000",
+        "clean:users": "tsx scripts/remove-users-from-monday.ts --yes",
+        "clean:users:dry": "tsx scripts/remove-users-from-monday.ts",
+        "clean:users:delete": "tsx scripts/remove-users-from-monday.ts --yes --delete"
+    },
+    "dependencies": {
+        "@prisma/adapter-pg": "^7.10.0",
+        "@prisma/client": "^7.10.0",
+        "next": "16.3.8",
+        "pg": "^8.23.1",
+        "react": "19.3.0",
+        "react-confetti": "^6.4.0",
+        "react-dom": "19.3.0"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.3",
+        "@types/node": "^26.6.4",
+        "@types/pg": "^8.23.1",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "dotenv": "^18.0.5",
+        "eslint": "^9.39.5",
+        "eslint-config-next": "16.3.8",
+        "prisma": "^7.10.0",
+        "tailwindcss": "^4.3.3",
+        "tsx": "^4.23.15",
+        "typescript": "^5.9.3",
+        "xlsx": "0.18.5"
+    }
 }
