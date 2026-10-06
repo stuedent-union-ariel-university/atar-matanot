@@ -356,6 +356,91 @@ body {
     pointer-events: none;
 }
 
+/* Entrance: content rises into place */
+@keyframes rise-in {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+.rise-in {
+    animation: rise-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Selected gift gives a small pop */
+@keyframes pop {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(1.04);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+.gift-selected {
+    animation: pop 420ms ease-out;
+}
+
+/* Selection badge bounces in */
+@keyframes badge-in {
+    from {
+        transform: scale(0) rotate(-20deg);
+    }
+    to {
+        transform: scale(1) rotate(0);
+    }
+}
+.badge-pop {
+    animation: badge-in 360ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Headline with a slow light sweep */
+@keyframes shimmer {
+    to {
+        background-position: 200% center;
+    }
+}
+.shimmer-text {
+    background: linear-gradient(
+        100deg,
+        var(--primary) 0%,
+        #7fb6ea 30%,
+        var(--primary) 60%,
+        var(--primary-700) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 6s linear infinite;
+}
+
+/* Light sweep across buttons on hover */
+.btn-futuristic:after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+        110deg,
+        transparent 30%,
+        rgba(255 255 255 / 0.35) 50%,
+        transparent 70%
+    );
+    transform: translateX(-120%);
+    transition: transform 600ms ease;
+    pointer-events: none;
+}
+.btn-futuristic:hover:not(:disabled):after {
+    transform: translateX(120%);
+}
+
 /* Reduce motion respect */
 @media (prefers-reduced-motion: reduce) {
     .spinner {
@@ -366,5 +451,14 @@ body {
     }
     .btn-futuristic:hover {
         transform: none;
+    }
+    .rise-in,
+    .gift-selected,
+    .badge-pop,
+    .shimmer-text {
+        animation: none;
+    }
+    .btn-futuristic:after {
+        display: none;
     }
 }

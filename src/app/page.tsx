@@ -15,7 +15,7 @@ export default async function Home() {
             <main className="max-w-6xl mx-auto">
                 <section className="text-center mb-12 md:mb-16 relative">
                     <div className="mx-auto max-w-3xl">
-                        <h1 className="fancy-underline neon-text text-4xl md:text-5xl font-bold mb-5 leading-tight">
+                        <h1 className="fancy-underline shimmer-text rise-in text-4xl md:text-5xl font-bold mb-5 leading-tight">
                             בחר/י את המתנה שלך
                         </h1>
                         <p className="max-w-2xl mx-auto text-base md:text-lg text-slate-600 leading-relaxed">

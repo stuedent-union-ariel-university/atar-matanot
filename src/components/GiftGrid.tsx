@@ -166,7 +166,7 @@ export default function GiftGrid() {
                 </div>
             )}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {inStockGifts.map((gift) => {
+                {inStockGifts.map((gift, index) => {
                     const selected = gift.id === selectedGiftId;
                     return (
                         <button
@@ -174,15 +174,16 @@ export default function GiftGrid() {
                             type="button"
                             onClick={() => setSelectedGiftId(gift.id)}
                             aria-pressed={selected}
-                            className={`relative group rounded-2xl border p-4 text-right transition shadow-sm hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3B7FC4]/40 ${
+                            style={{ animationDelay: `${index * 70}ms` }}
+                            className={`rise-in relative group rounded-2xl border p-4 text-right transition shadow-sm hover:shadow-md hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3B7FC4]/40 ${
                                 selected
-                                    ? "border-[#3B7FC4]/50 bg-[#3B7FC4]/10"
+                                    ? "gift-selected border-[#3B7FC4]/50 bg-[#3B7FC4]/10"
                                     : "border-black/10 bg-white/60"
                             }`}
                             dir="rtl"
                         >
                             {selected && (
-                                <span className="absolute -top-2 -left-2 bg-[#3B7FC4] text-white text-xs font-bold px-2 py-1 rounded-full shadow">
+                                <span className="badge-pop absolute -top-2 -left-2 bg-[#3B7FC4] text-white text-xs font-bold px-2 py-1 rounded-full shadow">
                                     נבחר
                                 </span>
                             )}

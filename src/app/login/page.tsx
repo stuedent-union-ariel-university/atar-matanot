@@ -63,7 +63,7 @@ export default function LoginPage() {
                     />
                     <form
                         onSubmit={handleSubmit}
-                        className="relative glass glass-border p-6 md:p-8"
+                        className="rise-in relative glass glass-border p-6 md:p-8"
                     >
                         <label
                             htmlFor="userId"
