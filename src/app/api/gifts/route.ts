@@ -14,7 +14,9 @@ export async function GET(request: Request) {
     });
     if (limited) return limited;
 
-    const catalog = await prisma.gift.findMany();
+    const catalog = await prisma.gift.findMany({
+      orderBy: [{ title: "asc" }, { description: "asc" }],
+    });
     const gifts = await getGiftsWithRemaining(
       catalog.map((g) => ({
         id: g.id,
