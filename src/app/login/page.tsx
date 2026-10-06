@@ -116,6 +116,19 @@ export default function LoginPage() {
             </form>
           )}
         </div>
+
+        <p className="mt-10 text-center text-base text-slate-600">
+          לא נמצאתם ברשימה? 🤔
+          <br />
+          <a
+            href="https://forms.monday.com/forms/3b6ab2ac8ef46b225891cd0fec26c84c?r=use1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-2 font-semibold text-[#3B7FC4] underline underline-offset-4 hover:opacity-80"
+          >
+            כתבו לנו כאן ונבדוק ביחד 💙
+          </a>
+        </p>
       </main>
     </div>
   );

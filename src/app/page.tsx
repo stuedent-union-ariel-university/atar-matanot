@@ -47,8 +47,7 @@ export default async function Home() {
               <GiftGrid />
             </Suspense>
           </div>
-        </div>
-      </main>
+        </div>      </main>
     </div>
   );
 }
