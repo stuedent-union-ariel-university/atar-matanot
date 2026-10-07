@@ -41,7 +41,7 @@ body {
             rgba(59, 127, 196, 0.04),
             transparent 65%
         ),
-        linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)),
+        linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)),
         url("/bg.png");
     background-size: auto, auto, auto, cover;
     background-position: center, center, center, center;
@@ -209,6 +209,15 @@ body {
     background-size: 160px 160px;
     mix-blend-mode: multiply;
     opacity: 0.12;
+}
+
+@media (max-width: 640px) {
+    .bg-grid:before {
+        opacity: 0.08;
+    }
+    .bg-grid:after {
+        opacity: 0.05;
+    }
 }
 
 @keyframes grid-move {
