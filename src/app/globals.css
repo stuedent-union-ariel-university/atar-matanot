@@ -41,11 +41,7 @@ body {
             rgba(59, 127, 196, 0.04),
             transparent 65%
         ),
-        linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)),
-        url("/bg.png");
-    background-size: auto, auto, auto, cover;
-    background-position: center, center, center, center;
-    background-repeat: no-repeat;
+        #ffffff;
     min-height: 100vh;
     color: var(--foreground);
     font-family:
@@ -53,6 +49,23 @@ body {
     position: relative;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+}
+
+/* Branded pattern, kept in its own layer (not stacked into the `background`
+   shorthand above) because Safari has historically mis-painted multi-layer
+   backgrounds that mix gradients with a `cover`-sized image, leaving patches
+   of the image unfaded. A plain `opacity` here is far more reliable. */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("/bg.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.04;
+    pointer-events: none;
 }
 
 /* Light UI Utility Classes */
