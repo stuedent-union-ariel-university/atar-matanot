@@ -110,19 +110,19 @@ export const gifts: Gift[] = [
         id: "quality-laptop-backpack", // OSK263
         title: "תיק גב איכותי למחשב אפור",
         description: "אפור",
-        image: "/gifts/gray-backpack.jpeg",
+        image: "/gifts/gray-backpack.png",
         stock: 0,
     },
     {
         id: "blue-premium-laptop-backpack",
-        title: "תיק גב מפואר למחשב",
+        title: "תיק גב מפואר למחשב דגם A",
         description: "כחול",
         image: "/gifts/blue-premium-laptop-backpack.png",
         stock: 40,
     },
     {
         id: "black-premium-laptop-backpack",
-        title: "תיק גב מפואר למחשב",
+        title: "תיק גב מפואר למחשב דגם B",
         description: "שחור",
         image: "/gifts/black-premium-laptop-backpack.png",
         stock: 40,
@@ -144,14 +144,14 @@ export const gifts: Gift[] = [
     {
         id: "laptop-bag-osp4583f", // Osp4583F
         title: "תיק מחשב נייד",
-        image: "/gifts/laptop-bag-osp4583f.jpg",
+        image: "/gifts/laptop-bag-osp4583f.png",
         stock: 850,
     },
     {
         id: "gray-polo-sports-bag",
         title: "תיק ספורט פולו",
         description: "אפור",
-        image: "/gifts/gray-sportsbag.jpeg",
+        image: "/gifts/gray-sportsbag.png",
         stock: 525,
     },
     {
@@ -165,7 +165,7 @@ export const gifts: Gift[] = [
         id: "black-polo-sports-bag",
         title: "תיק ספורט פולו",
         description: "שחור",
-        image: "/gifts/black-polo-sports-bag.jpeg",
+        image: "/gifts/black-polo-sports-bag.png",
         stock: 450,
     },
 ];

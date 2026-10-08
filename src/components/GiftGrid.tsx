@@ -153,8 +153,7 @@ export default function GiftGrid() {
     return (
         <div className="w-full max-w-5xl mx-auto text-center" dir="rtl">
             <div className="alert alert-success text-emerald-800 mb-8">
-                <span className="font-semibold text-emerald-700">מזל טוב!</span>{" "}
-                אתה זכאי לבחור מתנה. לאחר השליחה לא ניתן לשנות בחירה.
+                לאחר השליחה לא ניתן לשנות בחירה.
             </div>
             {submitError && (
                 <div
