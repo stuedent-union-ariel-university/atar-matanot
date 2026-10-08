@@ -12,7 +12,7 @@ export const gifts: Gift[] = [
     {
         id: "white-thermal-cup-with-straw",
         title: "כוס תרמוס עם קש",
-        description: "לבן",
+        description: 'לבן 900 מ"ל',
         image: "/gifts/white-thermal-cup-with-straw.png",
         stock: 110,
     },
