@@ -24,6 +24,13 @@ export function ThankYouContent() {
                     recycle={false}
                     gravity={0.25}
                     tweenDuration={6400}
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: "auto",
+                        bottom: "auto",
+                    }}
                 />
             )}
             <h1 className="fancy-underline neon-text text-4xl md:text-5xl font-bold mb-8 leading-tight">
