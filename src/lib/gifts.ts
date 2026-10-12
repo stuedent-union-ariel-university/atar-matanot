@@ -20,7 +20,7 @@ export const gifts: Gift[] = [
         id: "white-thermal-cup-with-straw-new",
         title: "כוס תרמוס עם קש",
         description: "לבן 700 מל",
-        image: "/gifts/white-thermal-cup-with-straw.png",
+        image: "/gifts/700-ml-cup.jpeg",
         stock: 1000,
     },
     {
@@ -48,14 +48,14 @@ export const gifts: Gift[] = [
         title: "צידנית 8 ליטר",
         description: "אפור",
         image: "/gifts/gray-cooler-8l.png",
-        stock: 470,
+        stock: 540,
     },
     {
         id: "gray-lunch-cooler",
         title: "צידנית אישית",
         description: "אפור",
         image: "/gifts/gray-lunch-cooler.png",
-        stock: 250,
+        stock: 20,
     },
     {
         id: "blue-lunch-cooler",
@@ -97,14 +97,14 @@ export const gifts: Gift[] = [
         title: "תיק גב איכותי למחשב",
         description: "כחול",
         image: "/gifts/blue-quality-laptop-backpack.png",
-        stock: 0,
+        stock: 425,
     },
     {
         id: "black-quality-laptop-backpack",
         title: "תיק גב איכותי למחשב",
         description: "שחור",
         image: "/gifts/black-quality-laptop-backpack.png",
-        stock: 0,
+        stock: 425,
     },
     {
         id: "quality-laptop-backpack", // OSK263
@@ -166,6 +166,6 @@ export const gifts: Gift[] = [
         title: "תיק ספורט פולו",
         description: "שחור",
         image: "/gifts/black-polo-sports-bag.png",
-        stock: 450,
+        stock: 475,
     },
 ];
