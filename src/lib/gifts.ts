@@ -94,35 +94,35 @@ export const gifts: Gift[] = [
     },
     {
         id: "blue-quality-laptop-backpack",
-        title: "תיק גב איכותי למחשב",
+        title: "תיק גב איכותי למחשב דגם A - כחול",
         description: "כחול",
         image: "/gifts/blue-quality-laptop-backpack.png",
-        stock: 425,
+        stock: 333,
     },
     {
         id: "black-quality-laptop-backpack",
-        title: "תיק גב איכותי למחשב",
+        title: "תיק גב איכותי למחשב דגם A - שחור",
         description: "שחור",
         image: "/gifts/black-quality-laptop-backpack.png",
-        stock: 425,
+        stock: 333,
     },
     {
         id: "quality-laptop-backpack", // OSK263
-        title: "תיק גב איכותי למחשב אפור",
+        title: "תיק גב איכותי למחשב דגם A - אפור",
         description: "אפור",
-        image: "/gifts/gray-backpack.png",
-        stock: 0,
+        image: "/gifts/תיק גב אפור עם לוגואים בעברית.png",
+        stock: 40,
     },
     {
         id: "blue-premium-laptop-backpack",
-        title: "תיק גב מפואר למחשב דגם A",
+        title: "תיק גב מפואר למחשב דגם B - כחול",
         description: "כחול",
         image: "/gifts/blue-premium-laptop-backpack.png",
         stock: 40,
     },
     {
         id: "black-premium-laptop-backpack",
-        title: "תיק גב מפואר למחשב דגם B",
+        title: "תיק גב מפואר למחשב דגם C - שחור",
         description: "שחור",
         image: "/gifts/black-premium-laptop-backpack.png",
         stock: 40,
@@ -139,7 +139,7 @@ export const gifts: Gift[] = [
         title: "תיק למחשב פולו ליין",
         description: "מחומר ממוחזר",
         image: "/gifts/recycled-polo-line-laptop-bag.png",
-        stock: 20,
+        stock: 0,
     },
     {
         id: "laptop-bag-osp4583f", // Osp4583F
