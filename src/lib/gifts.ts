@@ -110,7 +110,7 @@ export const gifts: Gift[] = [
         id: "quality-laptop-backpack", // OSK263
         title: "תיק גב איכותי למחשב דגם A - אפור",
         description: "אפור",
-        image: "/gifts/תיק גב אפור עם לוגואים בעברית.png",
+        image: "/gifts/quality-laptop-backpack.png",
         stock: 40,
     },
     {
