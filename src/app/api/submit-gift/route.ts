@@ -118,10 +118,21 @@ export async function POST(request: Request) {
         // source of truth for the gift request.
         if (config.MONDAY_API_KEY && config.CLAIMS_BOARD_ID) {
             try {
+                // Gifts can share a title (e.g. color/size variants) — when
+                // that's the case, append the descriptor so the claims board
+                // shows which variant was actually picked.
+                const hasSameTitleSibling = await prisma.gift.count({
+                    where: { title: gift.title, id: { not: gift.id } },
+                });
+                const claimTitle =
+                    hasSameTitleSibling > 0 && gift.description
+                        ? `${gift.title} - ${gift.description}`
+                        : gift.title;
+
                 const created = await createClaimItem(
                     config.CLAIMS_BOARD_ID,
                     normalizedUserId,
-                    gift.title,
+                    claimTitle,
                     user.name ?? undefined,
                 );
                 await prisma.giftRequest.update({
